@@ -12,6 +12,9 @@
   let dstIp = $state('');
   let dstPort = $state('80');
   let message = $state('Hello');
+  // The free-form message is one click away; scenarios offer ready-made messages first.
+  let custom = $state(false);
+  const formOpen = $derived(custom || player.preset.suggestions.length === 0);
 
   // Start the form from the first suggestion whenever a new preset is loaded.
   function fill(a: Action) {
@@ -54,17 +57,18 @@
 <div class="panel">
   {#if player.preset.suggestions.length > 0}
     <div class="suggest">
-      <span class="label">Try:</span>
+      <span class="label">Send:</span>
       {#each player.preset.suggestions as s (s.label)}
         <button class="chip" onclick={() => { fill(s.action); player.send(s.action); }}>{s.label}</button>
       {/each}
-      {#if compact}
-        <button class="chip" onclick={() => player.reset()}>Reset</button>
+      {#if !compact}
+        <button class="chip ghost" aria-expanded={custom} onclick={() => (custom = !custom)}>{custom ? 'Hide own message' : 'Own message…'}</button>
       {/if}
+      <button class="chip ghost" onclick={() => player.reset()} title="Back to the original settings; forget what the switches learned">Reset</button>
     </div>
   {/if}
 
-  {#if !compact}
+  {#if !compact && formOpen}
   <form onsubmit={submit}>
     <label>From
       <select bind:value={from}>
@@ -145,6 +149,10 @@
   }
   button:hover:not(:disabled) {
     border-color: var(--accent);
+  }
+  .ghost {
+    border-style: dashed;
+    color: var(--muted);
   }
   .chip {
     border-radius: 999px;

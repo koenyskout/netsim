@@ -20,6 +20,7 @@
   const tour = presets.filter((p) => p.group === 'tour');
   const fix = presets.filter((p) => p.group === 'fix');
   const more = presets.filter((p) => p.group === 'example');
+  const nextTour = $derived(tour[tour.findIndex((p) => p.id === player.preset.id) + 1] ?? null);
 
   /** `#name` opens the scenario with that name (the file name in src/examples). */
   function openByName(name: string) {
@@ -58,7 +59,7 @@
   const caption = $derived.by(() => {
     if (player.scene.event) return player.scene.event.caption;
     if (player.result) return 'Press ▶ to watch the message travel, or step through it with the arrow keys.';
-    return 'Pick a message below and press Send.';
+    return 'Pick a message below to send it.';
   });
 
   function onkeydown(e: KeyboardEvent) {
@@ -88,38 +89,38 @@
 <div class="app" class:present>
   <header>
     <h1>NetSim</h1>
-    <nav aria-label="Scenarios">
-      {#each tour as p (p.id)}
-        <button class:active={player.preset.id === p.id} onclick={() => player.loadPreset(p)}>{p.title}</button>
-      {/each}
-      <select
-        class:active={player.preset.group === 'fix'}
-        aria-label="Troubleshooting scenarios"
-        value={player.preset.group === 'fix' ? player.preset.id : ''}
-        onchange={(e) => {
-          const p = presets.find((x) => x.id === e.currentTarget.value);
+    <select
+      class="scenario"
+      aria-label="Scenario"
+      value={player.preset.group === 'sandbox' ? '' : player.preset.id}
+      onchange={(e) => {
+        const v = e.currentTarget.value;
+        if (v === '#new') openSandbox();
+        else {
+          const p = presets.find((x) => x.id === v);
           if (p) player.loadPreset(p);
-        }}
-      >
-        <option value="" disabled>Fix the network…</option>
-        {#each fix as p (p.id)}<option value={p.id}>{p.title}</option>{/each}
-      </select>
+        }
+      }}
+    >
+      {#if player.preset.group === 'sandbox'}<option value="" disabled>{player.preset.title}</option>{/if}
+      <optgroup label="Guided tour">
+        {#each tour as p (p.id)}<option value={p.id}>{p.title}</option>{/each}
+      </optgroup>
+      <optgroup label="Fix the network">
+        {#each fix as p (p.id)}<option value={p.id}>{p.title.replace(/^Fix: /, '')}</option>{/each}
+      </optgroup>
       {#if more.length > 0}
-        <select
-          class:active={player.preset.group === 'example'}
-          aria-label="More examples"
-          value={player.preset.group === 'example' ? player.preset.id : ''}
-          onchange={(e) => {
-            const p = presets.find((x) => x.id === e.currentTarget.value);
-            if (p) player.loadPreset(p);
-          }}
-        >
-          <option value="" disabled>Examples…</option>
+        <optgroup label="Examples">
           {#each more as p (p.id)}<option value={p.id}>{p.title}</option>{/each}
-        </select>
+        </optgroup>
       {/if}
-      <button class:active={player.preset.group === 'sandbox'} onclick={openSandbox}>Sandbox</button>
-    </nav>
+      <optgroup label="Your own">
+        <option value="#new">New network…</option>
+      </optgroup>
+    </select>
+    {#if nextTour}
+      <button class="toggle" onclick={() => player.loadPreset(nextTour)} title="Next scenario: {nextTour.title}">Next ›</button>
+    {/if}
     <div class="right">
       <button class="toggle" aria-pressed={player.editMode} onclick={() => player.setEditMode(!player.editMode)} title="Move devices, add or remove devices and cables">
         Edit
@@ -140,14 +141,15 @@
 
   {#if !present}
     <section class="intro">
-      <p><strong>{player.preset.description}</strong></p>
-      <p class="goal">{player.preset.goal}</p>
+      <p><strong>{player.preset.description}</strong> <span class="goal">{player.preset.goal}</span></p>
     </section>
   {/if}
 
   <main>
     <div class="stage-wrap">
+      <p class="caption" aria-live="polite">{caption}</p>
       <Stage {player} />
+      <div class="outcome-over"><Outcome {player} /></div>
       {#if player.editMode}<EditBar {player} />{/if}
       {#if !panelOpen}
         <button class="reopen" onclick={() => (panelOpen = true)} title="Show the side panel (I)">◂ Panel</button>
@@ -159,8 +161,6 @@
   </main>
 
   <footer>
-    <p class="caption" aria-live="polite">{caption}</p>
-    <div class="outcome-slot"><Outcome {player} /></div>
     <PlaybackBar {player} />
     <SendPanel {player} compact={present} />
   </footer>
@@ -179,30 +179,24 @@
   header {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    padding: 0.6rem 1.2rem;
+    gap: 0.8rem;
+    padding: 0.45rem 1rem;
     background: var(--panel);
     border-bottom: 1px solid var(--line);
-    flex-wrap: wrap;
   }
   h1 {
-    margin: 0;
-    font-size: 1.3rem;
+    margin: 0 0.4rem 0 0;
+    font-size: 1.2rem;
   }
-  nav {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-  nav button {
-    padding: 0.35rem 0.8rem;
-    border: 2px solid var(--line);
-    border-radius: 999px;
+  .scenario {
+    min-width: 0;
+    max-width: 24rem;
+    padding: 0.35rem 0.6rem;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
     background: var(--panel);
+    font-weight: 600;
     cursor: pointer;
-  }
-  nav button:hover {
-    border-color: var(--accent);
   }
   .right {
     margin-left: auto;
@@ -211,7 +205,7 @@
   }
   .problem {
     margin: 0;
-    padding: 0.4rem 1.2rem;
+    padding: 0.4rem 1rem;
     background: #fee2e2;
     color: #7f1d1d;
   }
@@ -224,45 +218,19 @@
     border-radius: 8px;
     background: var(--panel);
     cursor: pointer;
+    white-space: nowrap;
   }
   .toggle[aria-pressed='true'] {
     border-color: var(--accent);
     color: var(--accent);
   }
-  .stage-wrap {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    position: relative;
-  }
-  .reopen {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.3rem 0.7rem;
-    border: 2px solid var(--line);
-    border-radius: 8px;
-    background: var(--panel);
-    cursor: pointer;
-    z-index: 5;
-  }
-  nav select {
-    padding: 0.35rem 0.8rem;
-    border: 2px solid var(--line);
-    border-radius: 999px;
-    background: var(--panel);
-    cursor: pointer;
-  }
-  nav .active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
   .intro {
-    padding: 0.6rem 1.2rem 0;
+    padding: 0.45rem 1rem;
+    border-bottom: 1px solid var(--line);
   }
   .intro p {
-    margin: 0 0 0.2rem;
+    margin: 0;
+    line-height: 1.35;
   }
   .goal {
     color: var(--muted);
@@ -272,29 +240,52 @@
     min-height: 0;
     display: flex;
   }
+  .stage-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  /* The caption sits right above the picture, where the eyes already are. */
+  .caption {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    font-size: clamp(1.1rem, 2.4vh, 1.45rem);
+    line-height: 1.3;
+    min-height: 2.9em;
+    background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+    border-bottom: 1px solid var(--line);
+  }
+  .outcome-over {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 0.8rem;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .reopen {
+    position: absolute;
+    top: 4rem;
+    right: 0.5rem;
+    padding: 0.3rem 0.7rem;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    cursor: pointer;
+    z-index: 5;
+  }
   footer {
-    padding: 0.7rem 1.2rem 0.9rem;
+    padding: 0.5rem 1rem 0.6rem;
     background: var(--panel);
     border-top: 1px solid var(--line);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-  }
-  /* Reserve the space so the picture does not jump when the result appears. */
-  .outcome-slot {
-    min-height: 3.6rem;
-  }
-  .caption {
-    margin: 0;
-    font-size: clamp(1.1rem, 2.4vh, 1.45rem);
-    line-height: 1.35;
-    min-height: 2.7em;
+    gap: 0.45rem;
   }
   /* Lecture mode: bigger text for the back of the room. */
   .present .caption {
     font-size: clamp(1.4rem, 3.4vh, 2rem);
-  }
-  .present header {
-    padding-block: 0.3rem;
   }
 </style>
