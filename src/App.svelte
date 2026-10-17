@@ -147,9 +147,11 @@
 
   <main>
     <div class="stage-wrap">
-      <p class="caption" aria-live="polite">{caption}</p>
+      <!-- At the end of a run the result takes the caption's place, so there is one message to read. -->
+      <div class="caption" aria-live="polite">
+        {#if player.result && player.atEnd}<Outcome {player} />{:else}{caption}{/if}
+      </div>
       <Stage {player} />
-      <div class="outcome-over"><Outcome {player} /></div>
       {#if player.editMode}<EditBar {player} />{/if}
       {#if !panelOpen}
         <button class="reopen" onclick={() => (panelOpen = true)} title="Show the side panel (I)">◂ Panel</button>
@@ -254,16 +256,11 @@
     font-size: clamp(1.1rem, 2.4vh, 1.45rem);
     line-height: 1.3;
     min-height: 2.9em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     background: color-mix(in srgb, var(--accent) 7%, var(--panel));
     border-bottom: 1px solid var(--line);
-  }
-  .outcome-over {
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
-    bottom: 0.8rem;
-    z-index: 4;
-    pointer-events: none;
   }
   .reopen {
     position: absolute;

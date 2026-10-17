@@ -32,10 +32,11 @@
 
 <style>
   .banner {
-    padding: 0.55rem 0.9rem;
-    border-radius: 10px;
-    border: 2px solid;
-    font-size: 1rem;
+    margin: -0.5rem -1rem;
+    padding: 0.5rem 1rem;
+    border-left: 6px solid;
+    font-size: 0.85em;
+    flex: 1;
   }
   .good {
     background: #e6f6ec;
