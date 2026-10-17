@@ -9,7 +9,34 @@
 
   let areaW = $state(1200);
   let areaH = $state(640);
-  const scale = $derived(Math.min(areaW / STAGE.width, areaH / STAGE.height, 1.6));
+  // What must stay visible: labels hang off the cards (sideways, and mostly downwards), so fit a box a bit larger than the stage.
+  const BOX = { x0: -70, x1: STAGE.width + 70, y0: -20, y1: STAGE.height + 60 };
+  const scale = $derived(Math.min(areaW / (BOX.x1 - BOX.x0), areaH / (BOX.y1 - BOX.y0), 1.6));
+  const offset = $derived({
+    x: (areaW - (BOX.x1 - BOX.x0) * scale) / 2 - BOX.x0 * scale,
+    y: (areaH - (BOX.y1 - BOX.y0) * scale) / 2 - BOX.y0 * scale,
+  });
+
+  /** A switch's table goes above or below it, whichever side has more free room. */
+  function tableBelow(id: string): boolean {
+    const me = positions[id];
+    // Room up to the stage edge, or up to the nearest device in a band around this one.
+    // Labels hang below a device, so a device above takes more room than its centre suggests.
+    let above = me.y;
+    let below = STAGE.height - me.y;
+    for (const [other, p] of Object.entries(positions)) {
+      if (other === id) continue;
+      // A router's tables stand on top of it, wider than the router itself.
+      if (player.topology.devices[other]?.kind === 'router' && Math.abs(p.x - me.x) < 260 && Math.abs(p.y - me.y) < 170) {
+        above = Math.min(above, Math.max(0, me.y - p.y));
+      }
+      if (Math.abs(p.x - me.x) > 220) continue;
+      const dy = p.y - me.y;
+      if (dy < -20) above = Math.min(above, -dy - 110);
+      else if (dy > 20) below = Math.min(below, dy - 40);
+    }
+    return below > above;
+  }
 
   const positions = $derived(player.positions);
   const devices = $derived(Object.values(player.topology.devices));
@@ -71,7 +98,7 @@
     else player.select(id);
   }
 
-  const CARD_HALF = { w: 86, h: 42 };
+  const CARD_HALF = { w: 52, h: 36 };
 
   /** A point on the cable just outside the device card at `from`: used for port labels. */
   function labelPos(from: { x: number; y: number }, to: { x: number; y: number }) {
@@ -89,7 +116,7 @@
 <div class="area" bind:clientWidth={areaW} bind:clientHeight={areaH}>
   <div
     class="stage"
-    style="width:{STAGE.width}px; height:{STAGE.height}px; transform: scale({scale}); left:{(areaW - STAGE.width * scale) / 2}px; top:{(areaH - STAGE.height * scale) / 2}px; --dur:{Math.min(player.stepMs * 0.85, 1000)}ms"
+    style="width:{STAGE.width}px; height:{STAGE.height}px; transform: scale({scale}); left:{offset.x}px; top:{offset.y}px; --dur:{Math.min(player.stepMs * 0.85, 1000)}ms"
   >
     <svg class="cables" width={STAGE.width} height={STAGE.height} aria-hidden="true">
       {#each player.topology.links as link, i (link.a.device + link.a.iface + link.b.device + link.b.iface)}
@@ -126,6 +153,7 @@
         onpointerdown={(e) => startDrag(device.id, e)}
         draggable={player.editMode}
         cableFrom={player.cableFrom === device.id}
+        tableBelow={device.kind === 'switch' && tableBelow(device.id)}
       />
     {/each}
 

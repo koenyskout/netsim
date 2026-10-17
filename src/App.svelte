@@ -107,7 +107,7 @@
         {#each tour as p (p.id)}<option value={p.id}>{p.title}</option>{/each}
       </optgroup>
       <optgroup label="Fix the network">
-        {#each fix as p (p.id)}<option value={p.id}>{p.title.replace(/^Fix: /, '')}</option>{/each}
+        {#each fix as p (p.id)}<option value={p.id}>{p.title}</option>{/each}
       </optgroup>
       {#if more.length > 0}
         <optgroup label="Examples">

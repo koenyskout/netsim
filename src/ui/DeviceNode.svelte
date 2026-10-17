@@ -2,8 +2,6 @@
   import type { Device, Layer, MacEntry, NatEntry } from '../engine/model';
   import { forwardKey, natKey, routeRows } from '../engine/routes';
   import Chip from './Chip.svelte';
-  import LayerStack from './LayerStack.svelte';
-  import { layersOf } from './colors';
 
   let {
     device,
@@ -19,6 +17,7 @@
     onpointerdown,
     draggable,
     cableFrom,
+    tableBelow = false,
   }: {
     device: Device;
     x: number;
@@ -38,6 +37,8 @@
     draggable?: boolean;
     /** This device is the first end of a cable being drawn. */
     cableFrom?: boolean;
+    /** Put the MAC table under the device instead of above it (fewer cables there). */
+    tableBelow?: boolean;
   } = $props();
 </script>
 
@@ -69,7 +70,6 @@
         <path d="M32 10v28M18 24h28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
       </svg>
     {/if}
-    <span class="stack"><LayerStack supported={layersOf(device)} active={activeLayer} /></span>
     {#if warn}<span class="warn" title="Something may be wrong here" aria-hidden="true">!</span>{/if}
   </button>
 
@@ -147,7 +147,7 @@
   {/if}
 
   {#if device.kind === 'switch'}
-    <div class="table solo">
+    <div class="table solo" class:below={tableBelow}>
       <div class="table-title">MAC table</div>
       {#each macTable ?? [] as row (row.mac)}
         <div class="row" class:hl={highlight === row.mac}>
@@ -174,10 +174,10 @@
     cursor: pointer;
     font: inherit;
     position: absolute;
-    left: -86px;
-    top: -42px;
-    width: 172px;
-    height: 84px;
+    left: -52px;
+    top: -36px;
+    width: 104px;
+    height: 72px;
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -189,7 +189,7 @@
     transition: box-shadow 0.25s;
   }
   .icon svg {
-    width: 56px;
+    width: 60px;
   }
   .icon:hover {
     border-color: var(--accent);
@@ -223,7 +223,7 @@
   }
   .ifname {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 15px;
     color: var(--muted);
   }
   .info {
@@ -238,18 +238,18 @@
   }
   .info {
     position: absolute;
-    top: 54px;
+    top: 42px;
     left: 0;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    font-size: 14px;
+    font-size: 17px;
     white-space: nowrap;
   }
   .name {
-    font-size: 18px;
+    font-size: 21px;
     font-weight: 700;
   }
   .addr,
@@ -259,13 +259,13 @@
     gap: 5px;
   }
   .gw {
-    font-size: 12px;
+    font-size: 15px;
     color: var(--muted);
   }
   .prefix {
     color: var(--muted);
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 16px;
     margin-left: -3px;
   }
   .none {
@@ -299,25 +299,29 @@
   .tables {
     position: absolute;
     left: 0;
-    bottom: 54px;
+    bottom: 46px;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
   .table {
-    min-width: 200px;
+    min-width: 180px;
     padding: 6px 8px;
     background: var(--panel);
     border: 2px solid var(--c-link);
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 15px;
   }
   .solo {
     position: absolute;
     left: 0;
-    bottom: 54px;
+    bottom: 46px;
     transform: translateX(-50%);
+  }
+  .solo.below {
+    bottom: auto;
+    top: 74px;
   }
   .sub {
     text-transform: none;
@@ -335,7 +339,7 @@
     margin-left: auto;
   }
   .table-title {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
