@@ -1,0 +1,282 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "4. Two networks and a router",
+    "group": "tour",
+    "order": 4,
+    "description": "Two separate networks joined by a router. PC1 and the Server are on different networks, so the message has to go through the router.",
+    "goal": "Watch the IP addresses: they never change. Watch the MAC addresses: they change at the router. Click a device to see and change its settings.",
+    "suggestions": [
+      {
+        "label": "PC1 → PC2 (same network)",
+        "action": {
+          "type": "send",
+          "from": "pc1",
+          "app": "Chat",
+          "dstIp": "192.168.1.11",
+          "dstPort": 5000,
+          "message": "Hi PC2"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      },
+      {
+        "label": "PC1 → Server (through the router)",
+        "action": {
+          "type": "send",
+          "from": "pc1",
+          "app": "Browser",
+          "dstIp": "192.168.2.50",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      }
+    ]
+  },
+  "devices": {
+    "pc1": {
+      "kind": "host",
+      "id": "pc1",
+      "name": "PC1",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": [
+        {
+          "name": "Chat",
+          "port": 5000,
+          "reply": "Hi!"
+        }
+      ]
+    },
+    "pc2": {
+      "kind": "host",
+      "id": "pc2",
+      "name": "PC2",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.11",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": [
+        {
+          "name": "Chat",
+          "port": 5000,
+          "reply": "Hi!"
+        }
+      ]
+    },
+    "server": {
+      "kind": "host",
+      "id": "server",
+      "name": "Server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:03",
+          "ip": "192.168.2.50",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.2.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "<html>…</html>"
+        }
+      ]
+    },
+    "laptop": {
+      "kind": "host",
+      "id": "laptop",
+      "name": "Laptop",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:04",
+          "ip": "192.168.2.20",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.2.1",
+      "apps": []
+    },
+    "swA": {
+      "kind": "switch",
+      "id": "swA",
+      "name": "Switch A",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:05"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:06"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:07"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:08"
+        }
+      ],
+      "macTable": []
+    },
+    "swB": {
+      "kind": "switch",
+      "id": "swB",
+      "name": "Switch B",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:09"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:0A"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:0B"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:0C"
+        }
+      ],
+      "macTable": []
+    },
+    "r1": {
+      "kind": "router",
+      "id": "r1",
+      "name": "Router",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:0D",
+          "ip": "192.168.1.1",
+          "prefix": 24
+        },
+        {
+          "id": "eth1",
+          "mac": "02:00:00:00:00:0E",
+          "ip": "192.168.2.1",
+          "prefix": 24
+        }
+      ],
+      "routes": []
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "pc1",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "swA",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "pc2",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "swA",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "r1",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "swA",
+        "iface": "p3"
+      }
+    },
+    {
+      "a": {
+        "device": "r1",
+        "iface": "eth1"
+      },
+      "b": {
+        "device": "swB",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "server",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "swB",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "laptop",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "swB",
+        "iface": "p3"
+      }
+    }
+  ],
+  "positions": {
+    "pc1": {
+      "x": 125,
+      "y": 190
+    },
+    "pc2": {
+      "x": 125,
+      "y": 470
+    },
+    "swA": {
+      "x": 360,
+      "y": 330
+    },
+    "r1": {
+      "x": 620,
+      "y": 330
+    },
+    "swB": {
+      "x": 880,
+      "y": 330
+    },
+    "server": {
+      "x": 1075,
+      "y": 190
+    },
+    "laptop": {
+      "x": 1075,
+      "y": 470
+    }
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "2. Same switch",
+    "group": "tour",
+    "order": 2,
+    "description": "Three computers on one switch. The switch starts out knowing nothing; it learns which MAC address is behind which port.",
+    "goal": "An unknown destination makes the switch flood the frame out of every other port. Once it has learned, it forwards only to the right port. The switch only ever looks at the link layer.",
+    "suggestions": [
+      {
+        "label": "PC1 → PC2 (first time)",
+        "action": {
+          "type": "send",
+          "from": "pc1",
+          "app": "Browser",
+          "dstIp": "192.168.1.12",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      },
+      {
+        "label": "PC3 → PC1",
+        "action": {
+          "type": "send",
+          "from": "pc3",
+          "app": "Browser",
+          "dstIp": "192.168.1.11",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      }
+    ]
+  },
+  "devices": {
+    "pc1": {
+      "kind": "host",
+      "id": "pc1",
+      "name": "PC1",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.11",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "OK"
+        }
+      ]
+    },
+    "pc2": {
+      "kind": "host",
+      "id": "pc2",
+      "name": "PC2",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.12",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "OK"
+        }
+      ]
+    },
+    "pc3": {
+      "kind": "host",
+      "id": "pc3",
+      "name": "PC3",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:03",
+          "ip": "192.168.1.13",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "OK"
+        }
+      ]
+    },
+    "sw": {
+      "kind": "switch",
+      "id": "sw",
+      "name": "Switch",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:04"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:05"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:06"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:07"
+        }
+      ],
+      "macTable": []
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "pc1",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "pc2",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "pc3",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p3"
+      }
+    }
+  ],
+  "positions": {
+    "sw": {
+      "x": 520,
+      "y": 200
+    },
+    "pc1": {
+      "x": 200,
+      "y": 440
+    },
+    "pc2": {
+      "x": 600,
+      "y": 440
+    },
+    "pc3": {
+      "x": 1000,
+      "y": 440
+    }
+  }
+}

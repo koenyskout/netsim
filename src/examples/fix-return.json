@@ -1,0 +1,162 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "Fix: the reply never comes back",
+    "group": "fix",
+    "order": 13,
+    "description": "The message arrives, but nothing answers. Replies have to find their way back too.",
+    "goal": "Click a device to look at its settings, fix the problem, and send again. \"Show hints\" reveals what the simulator sees.",
+    "hideHints": true,
+    "suggestions": [
+      {
+        "label": "PC → Server",
+        "action": {
+          "type": "send",
+          "from": "pc",
+          "app": "Browser",
+          "dstIp": "192.168.3.50",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": false
+        }
+      }
+    ]
+  },
+  "devices": {
+    "pc": {
+      "kind": "host",
+      "id": "pc",
+      "name": "PC",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": []
+    },
+    "server": {
+      "kind": "host",
+      "id": "server",
+      "name": "Server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.3.50",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.3.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "<html>…</html>"
+        }
+      ]
+    },
+    "r1": {
+      "kind": "router",
+      "id": "r1",
+      "name": "Router 1",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:03",
+          "ip": "192.168.1.1",
+          "prefix": 24
+        },
+        {
+          "id": "eth1",
+          "mac": "02:00:00:00:00:04",
+          "ip": "192.168.2.1",
+          "prefix": 24
+        }
+      ],
+      "routes": [
+        {
+          "network": "192.168.3.0",
+          "prefix": 24,
+          "via": "192.168.2.2"
+        }
+      ]
+    },
+    "r2": {
+      "kind": "router",
+      "id": "r2",
+      "name": "Router 2",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:05",
+          "ip": "192.168.2.2",
+          "prefix": 24
+        },
+        {
+          "id": "eth1",
+          "mac": "02:00:00:00:00:06",
+          "ip": "192.168.3.1",
+          "prefix": 24
+        }
+      ],
+      "routes": []
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "pc",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "r1",
+        "iface": "eth0"
+      }
+    },
+    {
+      "a": {
+        "device": "r1",
+        "iface": "eth1"
+      },
+      "b": {
+        "device": "r2",
+        "iface": "eth0"
+      }
+    },
+    {
+      "a": {
+        "device": "r2",
+        "iface": "eth1"
+      },
+      "b": {
+        "device": "server",
+        "iface": "eth0"
+      }
+    }
+  ],
+  "positions": {
+    "pc": {
+      "x": 125,
+      "y": 300
+    },
+    "r1": {
+      "x": 440,
+      "y": 300
+    },
+    "r2": {
+      "x": 760,
+      "y": 300
+    },
+    "server": {
+      "x": 1075,
+      "y": 300
+    }
+  }
+}

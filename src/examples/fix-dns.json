@@ -1,0 +1,251 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "Fix: the name does not work",
+    "group": "fix",
+    "order": 15,
+    "description": "Opening 203.0.113.80 works, but www.example.org does not.",
+    "goal": "Click a device to look at its settings, fix the problem, and send again. \"Show hints\" reveals what the simulator sees.",
+    "hideHints": true,
+    "suggestions": [
+      {
+        "label": "Laptop → www.example.org",
+        "action": {
+          "type": "send",
+          "from": "laptop",
+          "app": "Browser",
+          "dstIp": "",
+          "dstName": "www.example.org",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": false,
+          "reason": "no-dns-server",
+          "device": "laptop"
+        }
+      },
+      {
+        "label": "Laptop → 203.0.113.80 (no name)",
+        "action": {
+          "type": "send",
+          "from": "laptop",
+          "app": "Browser",
+          "dstIp": "203.0.113.80",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      }
+    ]
+  },
+  "devices": {
+    "laptop": {
+      "kind": "host",
+      "id": "laptop",
+      "name": "Laptop",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": []
+    },
+    "r": {
+      "kind": "router",
+      "id": "r",
+      "name": "Router",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.1",
+          "prefix": 24
+        },
+        {
+          "id": "eth1",
+          "mac": "02:00:00:00:00:03",
+          "ip": "203.0.113.1",
+          "prefix": 24
+        }
+      ],
+      "routes": []
+    },
+    "net": {
+      "kind": "switch",
+      "id": "net",
+      "name": "Internet",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:04"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:05"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:06"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:07"
+        }
+      ],
+      "macTable": []
+    },
+    "dns": {
+      "kind": "host",
+      "id": "dns",
+      "name": "DNS server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:08",
+          "ip": "203.0.113.53",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.1",
+      "apps": [],
+      "dnsRecords": [
+        {
+          "name": "www.example.org",
+          "ip": "203.0.113.80"
+        },
+        {
+          "name": "shop.example.org",
+          "ip": "203.0.113.81"
+        }
+      ]
+    },
+    "www": {
+      "kind": "host",
+      "id": "www",
+      "name": "www server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:09",
+          "ip": "203.0.113.80",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "Welcome!"
+        }
+      ]
+    },
+    "shop": {
+      "kind": "host",
+      "id": "shop",
+      "name": "Shop server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:0A",
+          "ip": "203.0.113.81",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "Buy now!"
+        }
+      ]
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "laptop",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "r",
+        "iface": "eth0"
+      }
+    },
+    {
+      "a": {
+        "device": "r",
+        "iface": "eth1"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "dns",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "www",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p3"
+      }
+    },
+    {
+      "a": {
+        "device": "shop",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p4"
+      }
+    }
+  ],
+  "positions": {
+    "laptop": {
+      "x": 150,
+      "y": 320
+    },
+    "r": {
+      "x": 450,
+      "y": 320
+    },
+    "net": {
+      "x": 720,
+      "y": 320
+    },
+    "dns": {
+      "x": 1000,
+      "y": 120
+    },
+    "www": {
+      "x": 1000,
+      "y": 320
+    },
+    "shop": {
+      "x": 1000,
+      "y": 520
+    }
+  }
+}

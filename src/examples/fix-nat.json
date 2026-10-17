@@ -1,0 +1,312 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "Fix: nobody can visit the home server",
+    "group": "fix",
+    "order": 14,
+    "description": "A friend tries to open the web page on your home server, using your public address. It never arrives.",
+    "goal": "Click a device to look at its settings, fix the problem, and send again. \"Show hints\" reveals what the simulator sees.",
+    "hideHints": true,
+    "suggestions": [
+      {
+        "label": "Friend → home server (public port 8080)",
+        "action": {
+          "type": "send",
+          "from": "friend",
+          "app": "Browser",
+          "dstIp": "203.0.113.2",
+          "dstPort": 8080,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": false,
+          "reason": "no-mapping",
+          "device": "home"
+        }
+      },
+      {
+        "label": "PC1 → web server",
+        "action": {
+          "type": "send",
+          "from": "pc1",
+          "app": "Browser",
+          "dstIp": "203.0.113.80",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      }
+    ]
+  },
+  "devices": {
+    "pc1": {
+      "kind": "host",
+      "id": "pc1",
+      "name": "PC1",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": []
+    },
+    "pc2": {
+      "kind": "host",
+      "id": "pc2",
+      "name": "PC2",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.11",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": []
+    },
+    "nas": {
+      "kind": "host",
+      "id": "nas",
+      "name": "Home server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:03",
+          "ip": "192.168.1.50",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "Home page"
+        }
+      ]
+    },
+    "web": {
+      "kind": "host",
+      "id": "web",
+      "name": "Web server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:04",
+          "ip": "203.0.113.80",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.2",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "<html>…</html>"
+        }
+      ]
+    },
+    "friend": {
+      "kind": "host",
+      "id": "friend",
+      "name": "Friend",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:05",
+          "ip": "203.0.113.99",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.2",
+      "apps": []
+    },
+    "lan": {
+      "kind": "switch",
+      "id": "lan",
+      "name": "Home switch",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:06"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:07"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:08"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:09"
+        }
+      ],
+      "macTable": []
+    },
+    "net": {
+      "kind": "switch",
+      "id": "net",
+      "name": "Internet",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:0A"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:0B"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:0C"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:0D"
+        }
+      ],
+      "macTable": []
+    },
+    "home": {
+      "kind": "router",
+      "id": "home",
+      "name": "Home router",
+      "interfaces": [
+        {
+          "id": "inside",
+          "mac": "02:00:00:00:00:0E",
+          "ip": "192.168.1.1",
+          "prefix": 24
+        },
+        {
+          "id": "outside",
+          "mac": "02:00:00:00:00:0F",
+          "ip": "203.0.113.2",
+          "prefix": 24
+        }
+      ],
+      "routes": [],
+      "nat": {
+        "outside": "outside",
+        "forwards": [],
+        "table": []
+      }
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "pc1",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "lan",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "pc2",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "lan",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "nas",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "lan",
+        "iface": "p3"
+      }
+    },
+    {
+      "a": {
+        "device": "home",
+        "iface": "inside"
+      },
+      "b": {
+        "device": "lan",
+        "iface": "p4"
+      }
+    },
+    {
+      "a": {
+        "device": "home",
+        "iface": "outside"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "web",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "friend",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p3"
+      }
+    }
+  ],
+  "positions": {
+    "pc1": {
+      "x": 125,
+      "y": 130
+    },
+    "pc2": {
+      "x": 125,
+      "y": 330
+    },
+    "nas": {
+      "x": 125,
+      "y": 530
+    },
+    "lan": {
+      "x": 370,
+      "y": 380
+    },
+    "home": {
+      "x": 620,
+      "y": 380
+    },
+    "net": {
+      "x": 880,
+      "y": 380
+    },
+    "web": {
+      "x": 1075,
+      "y": 190
+    },
+    "friend": {
+      "x": 1075,
+      "y": 530
+    }
+  }
+}

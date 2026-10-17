@@ -1,0 +1,313 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "6. Getting an address (DHCP)",
+    "group": "tour",
+    "order": 6,
+    "description": "PC1 and PC2 have no IP address yet. They shout \"is there a DHCP server?\" to everybody on their network, and the server hands out an address.",
+    "goal": "The question is a broadcast (destination MAC FF:FF:FF:FF:FF:FF), so the switch floods it. A router never forwards a broadcast, so the Far PC on the other side gets no answer.",
+    "suggestions": [
+      {
+        "label": "PC1 asks for an address",
+        "action": {
+          "type": "dhcp",
+          "from": "pc1"
+        },
+        "expect": {
+          "delivered": true
+        }
+      },
+      {
+        "label": "PC2 asks for an address",
+        "action": {
+          "type": "dhcp",
+          "from": "pc2"
+        },
+        "expect": {
+          "delivered": true
+        }
+      },
+      {
+        "label": "Far PC asks (other network)",
+        "action": {
+          "type": "dhcp",
+          "from": "far"
+        },
+        "expect": {
+          "delivered": false
+        }
+      },
+      {
+        "label": "PC1 → web (without an address)",
+        "action": {
+          "type": "send",
+          "from": "pc1",
+          "app": "Browser",
+          "dstIp": "203.0.113.80",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": false,
+          "reason": "no-ip",
+          "device": "pc1"
+        }
+      }
+    ]
+  },
+  "devices": {
+    "srv": {
+      "kind": "host",
+      "id": "srv",
+      "name": "DHCP server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.2",
+          "prefix": 24
+        }
+      ],
+      "gateway": "192.168.1.1",
+      "apps": [],
+      "dhcpServer": {
+        "first": "192.168.1.100",
+        "last": "192.168.1.110",
+        "prefix": 24,
+        "gateway": "192.168.1.1",
+        "leases": []
+      }
+    },
+    "pc1": {
+      "kind": "host",
+      "id": "pc1",
+      "name": "PC1",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02"
+        }
+      ],
+      "apps": []
+    },
+    "pc2": {
+      "kind": "host",
+      "id": "pc2",
+      "name": "PC2",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:03"
+        }
+      ],
+      "apps": []
+    },
+    "sw": {
+      "kind": "switch",
+      "id": "sw",
+      "name": "Home switch",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:04"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:05"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:06"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:07"
+        }
+      ],
+      "macTable": []
+    },
+    "r": {
+      "kind": "router",
+      "id": "r",
+      "name": "Router",
+      "interfaces": [
+        {
+          "id": "inside",
+          "mac": "02:00:00:00:00:08",
+          "ip": "192.168.1.1",
+          "prefix": 24
+        },
+        {
+          "id": "outside",
+          "mac": "02:00:00:00:00:09",
+          "ip": "203.0.113.1",
+          "prefix": 24
+        }
+      ],
+      "routes": []
+    },
+    "net": {
+      "kind": "switch",
+      "id": "net",
+      "name": "Internet",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:0A"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:0B"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:0C"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:0D"
+        }
+      ],
+      "macTable": []
+    },
+    "web": {
+      "kind": "host",
+      "id": "web",
+      "name": "Web server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:0E",
+          "ip": "203.0.113.80",
+          "prefix": 24
+        }
+      ],
+      "gateway": "203.0.113.1",
+      "apps": [
+        {
+          "name": "Web",
+          "port": 80,
+          "reply": "Welcome!"
+        }
+      ]
+    },
+    "far": {
+      "kind": "host",
+      "id": "far",
+      "name": "Far PC",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:0F"
+        }
+      ],
+      "apps": []
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "srv",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "pc1",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "pc2",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p3"
+      }
+    },
+    {
+      "a": {
+        "device": "r",
+        "iface": "inside"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p4"
+      }
+    },
+    {
+      "a": {
+        "device": "r",
+        "iface": "outside"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "web",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p2"
+      }
+    },
+    {
+      "a": {
+        "device": "far",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "net",
+        "iface": "p3"
+      }
+    }
+  ],
+  "positions": {
+    "srv": {
+      "x": 330,
+      "y": 120
+    },
+    "sw": {
+      "x": 330,
+      "y": 320
+    },
+    "pc1": {
+      "x": 130,
+      "y": 510
+    },
+    "pc2": {
+      "x": 530,
+      "y": 510
+    },
+    "r": {
+      "x": 620,
+      "y": 320
+    },
+    "net": {
+      "x": 900,
+      "y": 320
+    },
+    "web": {
+      "x": 1000,
+      "y": 130
+    },
+    "far": {
+      "x": 1000,
+      "y": 510
+    }
+  }
+}

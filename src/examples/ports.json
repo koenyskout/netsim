@@ -1,0 +1,159 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "3. Apps and ports",
+    "group": "tour",
+    "order": 3,
+    "description": "One server runs two applications. The IP address finds the computer; the port number finds the application.",
+    "goal": "Same destination IP, different port, different application. A port nobody opened is simply refused.",
+    "suggestions": [
+      {
+        "label": "Ask the web server (port 80)",
+        "action": {
+          "type": "send",
+          "from": "client",
+          "app": "Browser",
+          "dstIp": "192.168.1.50",
+          "dstPort": 80,
+          "message": "GET /"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      },
+      {
+        "label": "Send mail (port 25)",
+        "action": {
+          "type": "send",
+          "from": "client",
+          "app": "Mail client",
+          "dstIp": "192.168.1.50",
+          "dstPort": 25,
+          "message": "Hello mail"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      },
+      {
+        "label": "Try a closed port (22)",
+        "action": {
+          "type": "send",
+          "from": "client",
+          "app": "Terminal",
+          "dstIp": "192.168.1.50",
+          "dstPort": 22,
+          "message": "login"
+        },
+        "expect": {
+          "delivered": false,
+          "reason": "port-closed",
+          "device": "server"
+        }
+      }
+    ]
+  },
+  "devices": {
+    "client": {
+      "kind": "host",
+      "id": "client",
+      "name": "Laptop",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "apps": []
+    },
+    "server": {
+      "kind": "host",
+      "id": "server",
+      "name": "Server",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.50",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Web server",
+          "port": 80,
+          "reply": "<html>…</html>"
+        },
+        {
+          "name": "Mail server",
+          "port": 25,
+          "reply": "250 OK"
+        }
+      ]
+    },
+    "sw": {
+      "kind": "switch",
+      "id": "sw",
+      "name": "Switch",
+      "interfaces": [
+        {
+          "id": "p1",
+          "mac": "02:00:00:00:00:03"
+        },
+        {
+          "id": "p2",
+          "mac": "02:00:00:00:00:04"
+        },
+        {
+          "id": "p3",
+          "mac": "02:00:00:00:00:05"
+        },
+        {
+          "id": "p4",
+          "mac": "02:00:00:00:00:06"
+        }
+      ],
+      "macTable": []
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "client",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p1"
+      }
+    },
+    {
+      "a": {
+        "device": "server",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "sw",
+        "iface": "p2"
+      }
+    }
+  ],
+  "positions": {
+    "client": {
+      "x": 200,
+      "y": 330
+    },
+    "sw": {
+      "x": 600,
+      "y": 250
+    },
+    "server": {
+      "x": 1000,
+      "y": 330
+    }
+  }
+}

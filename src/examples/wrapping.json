@@ -1,0 +1,91 @@
+{
+  "format": "netsim/1",
+  "scenario": {
+    "title": "1. Wrapping a message",
+    "group": "tour",
+    "order": 1,
+    "description": "Two computers connected by one cable. Watch the message get wrapped in layers on the way out and unwrapped on arrival.",
+    "goal": "Each layer adds its own envelope: ports (transport), IP addresses (network), MAC addresses (link). The receiver peels them off in reverse order.",
+    "suggestions": [
+      {
+        "label": "Alice says hello to Bob",
+        "action": {
+          "type": "send",
+          "from": "alice",
+          "app": "Chat",
+          "dstIp": "192.168.1.20",
+          "dstPort": 5000,
+          "message": "Hello!"
+        },
+        "expect": {
+          "delivered": true,
+          "replyDelivered": true
+        }
+      }
+    ]
+  },
+  "devices": {
+    "alice": {
+      "kind": "host",
+      "id": "alice",
+      "name": "Alice",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:01",
+          "ip": "192.168.1.10",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Chat",
+          "port": 5000,
+          "reply": "Hi Alice!"
+        }
+      ]
+    },
+    "bob": {
+      "kind": "host",
+      "id": "bob",
+      "name": "Bob",
+      "interfaces": [
+        {
+          "id": "eth0",
+          "mac": "02:00:00:00:00:02",
+          "ip": "192.168.1.20",
+          "prefix": 24
+        }
+      ],
+      "apps": [
+        {
+          "name": "Chat",
+          "port": 5000,
+          "reply": "Hi Bob!"
+        }
+      ]
+    }
+  },
+  "links": [
+    {
+      "a": {
+        "device": "alice",
+        "iface": "eth0"
+      },
+      "b": {
+        "device": "bob",
+        "iface": "eth0"
+      }
+    }
+  ],
+  "positions": {
+    "alice": {
+      "x": 270,
+      "y": 250
+    },
+    "bob": {
+      "x": 930,
+      "y": 250
+    }
+  }
+}
