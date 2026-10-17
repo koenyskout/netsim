@@ -10,7 +10,7 @@
   let areaW = $state(1200);
   let areaH = $state(640);
   // What must stay visible: labels hang off the cards (sideways, and mostly downwards), so fit a box a bit larger than the stage.
-  const BOX = { x0: -70, x1: STAGE.width + 70, y0: -20, y1: STAGE.height + 60 };
+  const BOX = { x0: -70, x1: STAGE.width + 70, y0: -20, y1: STAGE.height + 90 };
   const scale = $derived(Math.min(areaW / (BOX.x1 - BOX.x0), areaH / (BOX.y1 - BOX.y0), 1.6));
   const offset = $derived({
     x: (areaW - (BOX.x1 - BOX.x0) * scale) / 2 - BOX.x0 * scale,

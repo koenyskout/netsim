@@ -14,7 +14,15 @@
 
   const player = new Player(presets[0]);
   let present = $state(false);
-  let panelOpen = $state(true);
+  // The side panel floats over the picture and starts closed, so the network gets the full width.
+  let panelOpen = $state(false);
+  $effect(() => {
+    if (player.selected) panelOpen = true;
+  });
+  function openTab(tab: 'packet' | 'layers' | 'device') {
+    player.tab = tab;
+    panelOpen = true;
+  }
   let sharing = $state(false);
   let linkProblem = $state('');
   const tour = presets.filter((p) => p.group === 'tour');
@@ -154,11 +162,20 @@
       <Stage {player} />
       {#if player.editMode}<EditBar {player} />{/if}
       {#if !panelOpen}
-        <button class="reopen" onclick={() => (panelOpen = true)} title="Show the side panel (I)">◂ Panel</button>
+        <div class="reopen">
+          <button onclick={() => openTab('packet')} title="Show what is inside the message (I)">Packet</button>
+          <button onclick={() => openTab('layers')} title="Show the four layers">Layers</button>
+        </div>
       {/if}
     </div>
     {#if panelOpen}
-      <Aside {player} onclose={() => (panelOpen = false)} />
+      <Aside
+        {player}
+        onclose={() => {
+          panelOpen = false;
+          player.select(null);
+        }}
+      />
     {/if}
   </main>
 
@@ -241,6 +258,7 @@
     flex: 1;
     min-height: 0;
     display: flex;
+    position: relative;
   }
   .stage-wrap {
     flex: 1;
@@ -266,12 +284,24 @@
     position: absolute;
     top: 4rem;
     right: 0.5rem;
+    display: flex;
+    gap: 0.4rem;
+    z-index: 5;
+  }
+  .reopen button {
     padding: 0.3rem 0.7rem;
     border: 2px solid var(--line);
     border-radius: 8px;
     background: var(--panel);
     cursor: pointer;
-    z-index: 5;
+  }
+  main :global(aside) {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: -8px 0 24px rgb(0 0 0 / 0.12);
   }
   footer {
     padding: 0.5rem 1rem 0.6rem;
