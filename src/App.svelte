@@ -128,14 +128,10 @@
       <button class="toggle" onclick={() => player.loadPreset(nextTour)} title="Next scenario: {nextTour.title}">Next ›</button>
     {/if}
     <div class="right">
-      <button
-        class="toggle"
-        aria-pressed={player.showArp}
-        onclick={() => player.setShowArp(!player.showArp)}
-        title="Show how a device finds the MAC address of the next hop (ARP), or skip that step"
-      >
+      <label class="toggle check" title="Show how a device finds the MAC address of the next hop (ARP), or skip that step">
+        <input type="checkbox" checked={player.showArp} onchange={(e) => player.setShowArp(e.currentTarget.checked)} />
         Show ARP
-      </button>
+      </label>
       <button class="toggle" aria-pressed={player.editMode} onclick={() => player.setEditMode(!player.editMode)} title="Move devices, add or remove devices and cables">
         Edit
       </button>
@@ -246,6 +242,22 @@
     background: var(--panel);
     cursor: pointer;
     white-space: nowrap;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+  }
+  .check input {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .check:has(input:checked) {
+    border-color: var(--accent);
   }
   .toggle[aria-pressed='true'] {
     border-color: var(--accent);
