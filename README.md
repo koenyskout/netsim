@@ -40,4 +40,4 @@ Each scenario is a JSON file in [`src/examples/`](src/examples/README.md). The f
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE.md). You can use, change and share NetSim for any noncommercial purpose, including teaching at schools and universities. You may not sell it or anything derived from it.
+[MIT](LICENSE.md). You can use, change and share NetSim freely, as long as you keep the copyright and license notice.

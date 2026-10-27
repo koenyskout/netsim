@@ -36,4 +36,4 @@ tests/         Vitest, engine and scenarios only
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE.md). Do not add dependencies whose licenses conflict with this, and keep the `Required Notice` line in `LICENSE.md`.
+[MIT](LICENSE.md). Do not add dependencies whose licenses conflict with this, such as GPL.
