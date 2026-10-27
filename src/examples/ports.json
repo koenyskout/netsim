@@ -1,9 +1,9 @@
 {
   "format": "netsim/1",
   "scenario": {
-    "title": "3. Apps and ports",
+    "title": "4. Apps and ports",
     "group": "tour",
-    "order": 3,
+    "order": 4,
     "description": "One server runs two applications. The IP address finds the computer; the port number finds the application.",
     "goal": "Same destination IP, different port, different application. A port nobody opened is simply refused.",
     "suggestions": [

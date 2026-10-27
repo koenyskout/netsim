@@ -1,9 +1,9 @@
 {
   "format": "netsim/1",
   "scenario": {
-    "title": "7. Names (DNS)",
+    "title": "8. Names (DNS)",
     "group": "tour",
-    "order": 7,
+    "order": 8,
     "description": "People remember names, networks need IP addresses. Before the Laptop can send to www.example.org, it asks the DNS server which IP address that name stands for.",
     "goal": "DNS is a phone book. The question and the answer are ordinary messages (port 53) that travel like any other. Only then is the real message sent.",
     "suggestions": [

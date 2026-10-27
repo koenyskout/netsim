@@ -1,9 +1,9 @@
 {
   "format": "netsim/1",
   "scenario": {
-    "title": "6. Getting an address (DHCP)",
+    "title": "7. Getting an address (DHCP)",
     "group": "tour",
-    "order": 6,
+    "order": 7,
     "description": "PC1 and PC2 have no IP address yet. They shout \"is there a DHCP server?\" to everybody on their network, and the server hands out an address.",
     "goal": "The question is a broadcast (destination MAC FF:FF:FF:FF:FF:FF), so the switch floods it. A router never forwards a broadcast, so the Far PC on the other side gets no answer.",
     "suggestions": [

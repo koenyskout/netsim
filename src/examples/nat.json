@@ -1,9 +1,9 @@
 {
   "format": "netsim/1",
   "scenario": {
-    "title": "5. Home network with NAT",
+    "title": "6. Home network with NAT",
     "group": "tour",
-    "order": 5,
+    "order": 6,
     "description": "Everything at home has a private address that the internet does not route. The home router shares its one public address with all of them.",
     "goal": "Watch the source IP and port change at the router, and the NAT table remember who is who. The reply comes back to the public address and is translated back. Unsolicited traffic from outside has no table entry and is dropped, unless a port forwarding rule says otherwise.",
     "suggestions": [

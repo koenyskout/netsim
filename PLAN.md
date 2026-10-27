@@ -31,7 +31,7 @@ A visual, step-by-step network simulator for an introductory networking course. 
 - TypeScript + Vite static site, no backend. UI tech free (leaning Svelte; plain TS also fine).
 - Deployed to GitHub Pages via GitHub Actions (user has a GitHub organisation).
 - No recording of student results; forward/backward stepping replaces it.
-- ARP is shown: a broadcast question ("Who has 10.0.0.1?"), a direct answer, and ARP tables on hosts and routers that persist between runs like MAC tables. The waiting message steps aside until the answer arrives. (Originally planned as hidden; shown since it answers "how does the router know the next MAC?") The "Show ARP" button in the header turns it off: devices then just find the next MAC in one step and ARP tables stay hidden, for lessons that are not about ARP yet. The choice is remembered per browser.
+- ARP is shown: a broadcast question ("Who has 10.0.0.1?"), a direct answer, and ARP tables on hosts and routers that persist between runs like MAC tables. The waiting message steps aside until the answer arrives. (Originally planned as hidden; shown since it answers "how does the router know the next MAC?") The "Show ARP" checkbox in the header turns it off: devices then just find the next MAC in one step and ARP tables stay hidden, for lessons that are not about ARP yet. The choice is remembered per browser.
 - DHCP simplified to two steps (ask by broadcast, get settings). Router doubles as DHCP server by default.
 - DNS: single flat server with a name table and a client cache.
 - Subnet masks shown with a plain network label plus CIDR; accept dotted-decimal or CIDR input.
@@ -95,7 +95,7 @@ Every run ends with a banner: delivered to *app X on host Y*, or not delivered *
 
 Each has title, description, learning goal, suggested actions.
 
-**Guided tour**: 1 Wrapping a message (one host, layers) - 2 Same switch (MAC learning, flooding) - 3 Apps and ports - 4 Two networks and a router - 5 Home network with NAT and port forwarding.
+**Guided tour**: 1 Wrapping a message (one host, layers) - 2 A hub (everyone receives every frame) - 3 Same switch (MAC learning, flooding) - 4 Apps and ports - 5 Two networks and a router - 6 Home network with NAT and port forwarding - 7 DHCP - 8 DNS.
 **Optional services**: 6 DNS - 7 DHCP - 8 Everything together (DHCP, DNS, NAT).
 **Troubleshooting** (broken on purpose): wrong mask, missing/wrong gateway, missing route, closed port, NAT without port-forward rule.
 **Sandbox**: empty canvas, one switch with N hosts, home network starter.
