@@ -253,6 +253,19 @@ describe('ARP', () => {
     expect(second.outcome).toMatchObject({ delivered: true });
   });
 
+  it('can be hidden: MAC addresses are found without messages or table changes', () => {
+    const r = simulate(twoNetworks(), send('h1', '10.0.1.2', 80), { arp: false });
+    expect(arpEvents(r)).toHaveLength(0);
+    expect(r.events.some((e) => e.kind === 'arp-learn')).toBe(false);
+    expect(r.outcome).toMatchObject({ delivered: true });
+    expect(r.topology.devices.h1).not.toHaveProperty('arpTable');
+  });
+
+  it('when hidden, still drops a message for an address nobody has', () => {
+    const r = simulate(oneSwitch(), send('h1', '10.0.0.99', 80), { arp: false });
+    expect(r.events.at(-1)).toMatchObject({ kind: 'drop', reason: 'no-arp-reply', device: 'h1' });
+  });
+
   it('asks for the gateway, not for the final destination', () => {
     const r = simulate(twoNetworks(), send('h1', '10.0.1.2', 80));
     const asks = arpEvents(r).filter((e) => e.packet.arp?.op === 'request');

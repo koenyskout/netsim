@@ -111,6 +111,8 @@ export const captions = {
     `${device} also writes down who asked: ${ip} is at ${mac}. It will need that to answer.`,
   arpLearn: (device: string, ip: string, mac: string) =>
     `${device} writes the answer in its ARP table (${ip} → ${mac}) and sends the waiting message.`,
+  arpQuiet: (device: string, ip: string, mac: string) =>
+    `${device} finds out that ${ip} has MAC address ${mac} on its local network (ARP is hidden).`,
   arpOpen: (device: string) => `${device} opens the frame and finds an ARP message inside.`,
   arpUpdate: (device: string, ip: string, mac: string) => `${device} writes the answer in its ARP table: ${ip} → ${mac}.`,
   transmit: (from: string, to: string) => `The frame travels over the cable from ${from} to ${to}.`,

@@ -4,7 +4,7 @@ NetSim is a teaching tool for an **introductory** networking course. It is used 
 
 ## Ground rules
 
-- **Clarity beats protocol fidelity.** Every feature must serve one of the concepts in PLAN.md: MAC, IP, ports, switches, routing, NAT, and optionally DHCP and DNS. TCP details, ICMP, TTL, VLANs and IPv6 are out of scope on purpose. ARP is shown (it explains where the next MAC address comes from).
+- **Clarity beats protocol fidelity.** Every feature must serve one of the concepts in PLAN.md: MAC, IP, ports, switches, routing, NAT, and optionally DHCP and DNS. TCP details, ICMP, TTL, VLANs and IPv6 are out of scope on purpose. ARP is shown by default (it explains where the next MAC address comes from); `simulate(..., { arp: false })` skips it for viewers who turn it off.
 - **The projector is the main screen.** Check layout changes at 1280×800. Text on the stage must stay readable from the back of a room, and the network picture gets as much space as possible.
 - **English only**, in plain language for beginners. Captions explain *why*, not just *what*.
 - **No backend.** This is a static site deployed to GitHub Pages, with a relative `base` in `vite.config.ts`.

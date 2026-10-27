@@ -1,7 +1,7 @@
 import { sameNetwork, networkLabel, parseIp, networkAddress, formatIp } from './addressing';
 import { captions } from './explain';
 import type { Outcome, SimEvent, SimResult } from './events';
-import { getInterface, peerOf } from './graph';
+import { getInterface, peerOf, resolveMac } from './graph';
 import { arpKey, connectedKey, forwardKey, natKey, staticKey } from './routes';
 import {
   BROADCAST_MAC,
@@ -63,6 +63,13 @@ interface Ctx {
   waiting: Map<string, Outgoing>;
   /** Packets waiting for an ARP answer. */
   held: Held[];
+  /** Whether ARP is shown as messages, or MAC addresses are just known. */
+  arp: boolean;
+}
+
+export interface SimOptions {
+  /** Show ARP questions and answers (default). When false, the next hop's MAC address is simply found. */
+  arp?: boolean;
 }
 
 /**
@@ -70,9 +77,19 @@ interface Ctx {
  * Pure: the input topology is not modified; the returned topology carries
  * what the switches learned.
  */
-export function simulate(before: Topology, action: Action): SimResult {
+export function simulate(before: Topology, action: Action, options: SimOptions = {}): SimResult {
   const topo = structuredClone(before);
-  const ctx: Ctx = { topo, events: [], queue: [], transmits: 0, nextPid: 1, sockets: new Map(), waiting: new Map(), held: [] };
+  const ctx: Ctx = {
+    topo,
+    events: [],
+    queue: [],
+    transmits: 0,
+    nextPid: 1,
+    sockets: new Map(),
+    waiting: new Map(),
+    held: [],
+    arp: options.arp ?? true,
+  };
 
   const initialMacTables: Record<string, MacEntry[]> = {};
   const initialArpTables: Record<string, ArpEntry[]> = {};
@@ -292,6 +309,7 @@ function needMac(
   packet: Packet,
   resume: (mac: string) => void,
 ): void {
+  if (!ctx.arp) return quietMac(ctx, device, iface, ip, pid, packet, resume);
   const known = (device.arpTable ?? []).find((e) => e.ip === ip);
   ctx.events.push({
     kind: 'lookup',
@@ -308,6 +326,32 @@ function needMac(
   const asking = ctx.held.some((h) => h.device === device.id && h.ip === ip);
   ctx.held.push({ device: device.id, ip, pid, packet, resume });
   if (!asking) askArp(ctx, device, iface, ip);
+}
+
+/** With ARP hidden, the device just finds the MAC address in one step and its ARP table stays as it is. */
+function quietMac(
+  ctx: Ctx,
+  device: Host | Router,
+  iface: Interface,
+  ip: string,
+  pid: number,
+  packet: Packet,
+  resume: (mac: string) => void,
+): void {
+  const mac = resolveMac(ctx.topo, device.id, iface.id, ip);
+  if (!mac) return drop(ctx, device.id, 'no-arp-reply', packet, pid);
+  ctx.events.push({
+    kind: 'lookup',
+    device: device.id,
+    pid,
+    table: 'arp',
+    key: ip,
+    result: mac,
+    row: null,
+    packet,
+    caption: captions.arpQuiet(device.name, ip, mac),
+  });
+  resume(mac);
 }
 
 function askArp(ctx: Ctx, device: Host | Router, iface: Interface, ip: string): void {

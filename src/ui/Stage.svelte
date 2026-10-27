@@ -61,7 +61,7 @@
    */
   function arpTableFor(deviceId: string) {
     const rows = player.arpTables[deviceId];
-    if (!rows) return undefined;
+    if (!rows || !player.showArp) return undefined;
     const inUse = event?.device === deviceId && ((event.kind === 'lookup' && event.table === 'arp') || event.kind === 'arp-learn');
     if (inUse) return rows;
     return player.topology.devices[deviceId]?.kind === 'router' && rows.length > 0 ? rows : undefined;

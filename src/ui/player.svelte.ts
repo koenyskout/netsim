@@ -31,6 +31,10 @@ export class Player {
   editMessage = $state('');
   /** Bumped when the topology is replaced wholesale, so edit forms can start over. */
   epoch = $state(0);
+  /** Show ARP questions and answers, or let devices just know the next hop's MAC address. */
+  showArp = $state(loadShowArp());
+  /** What the current run started from, so it can be run again with ARP shown or hidden. */
+  private runFrom: { topology: Topology; action: Action } | null = null;
 
   events = $derived(this.result?.events ?? []);
   scene = $derived(sceneAt(this.events, this.position));
@@ -236,11 +240,22 @@ export class Player {
   }
 
   send(action: Action): void {
-    const result = simulate(this.topology, action);
+    this.runFrom = { topology: this.topology, action };
+    const result = simulate(this.topology, action, { arp: this.showArp });
     this.result = result;
     this.topology = result.topology;
     this.position = 0;
     if (this.tab !== 'layers') this.tab = 'packet';
+  }
+
+  /** Switch ARP on or off; the current run starts over with the new setting. */
+  setShowArp(on: boolean): void {
+    this.showArp = on;
+    saveShowArp(on);
+    if (this.result && this.runFrom) {
+      this.topology = this.runFrom.topology;
+      this.send(this.runFrom.action);
+    }
   }
 
   private timeline(): Timeline | null {
@@ -275,5 +290,24 @@ export class Player {
   }
   restart(): void {
     this.position = 0;
+  }
+}
+
+// Remembered per viewer; storage may be unavailable (private windows, blocked site data).
+const ARP_KEY = 'netsim.showArp';
+
+function loadShowArp(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(ARP_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function saveShowArp(on: boolean): void {
+  try {
+    globalThis.localStorage?.setItem(ARP_KEY, String(on));
+  } catch {
+    // Not remembered; it still applies for now.
   }
 }

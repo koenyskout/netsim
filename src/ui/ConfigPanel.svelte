@@ -347,7 +347,7 @@
         </fieldset>
       {/if}
 
-      {#if hasAddresses(device)}
+      {#if hasAddresses(device) && player.showArp}
         {@const arpRows = player.arpTables[device.id] ?? []}
         <fieldset>
           <legend>ARP table</legend>

@@ -128,6 +128,14 @@
       <button class="toggle" onclick={() => player.loadPreset(nextTour)} title="Next scenario: {nextTour.title}">Next ›</button>
     {/if}
     <div class="right">
+      <button
+        class="toggle"
+        aria-pressed={player.showArp}
+        onclick={() => player.setShowArp(!player.showArp)}
+        title="Show how a device finds the MAC address of the next hop (ARP), or skip that step"
+      >
+        Show ARP
+      </button>
       <button class="toggle" aria-pressed={player.editMode} onclick={() => player.setEditMode(!player.editMode)} title="Move devices, add or remove devices and cables">
         Edit
       </button>

@@ -13,3 +13,34 @@ export function getInterface(device: Device, iface: string): Interface {
   if (!found) throw new Error(`Device ${device.id} has no interface ${iface}`);
   return found;
 }
+
+/**
+ * Find the MAC address of the interface that owns `ip` on the same local
+ * network (link-layer segment) as the given interface. Switches and hubs pass
+ * everything through; routers and computers end the segment. This is what
+ * ARP would find, and stands in for it when ARP is hidden.
+ */
+export function resolveMac(topo: Topology, fromDevice: string, fromIface: string, ip: string): string | null {
+  const start = peerOf(topo, fromDevice, fromIface);
+  if (!start) return null;
+  const seen = new Set<string>([`${fromDevice}|${fromIface}`]);
+  const queue: Endpoint[] = [start];
+  while (queue.length > 0) {
+    const ep = queue.shift()!;
+    const key = `${ep.device}|${ep.iface}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const device = topo.devices[ep.device];
+    if (device.kind === 'switch' || device.kind === 'hub') {
+      for (const port of device.interfaces) {
+        if (port.id === ep.iface) continue;
+        const next = peerOf(topo, device.id, port.id);
+        if (next) queue.push(next);
+      }
+    } else {
+      const iface = getInterface(device, ep.iface);
+      if (iface.ip === ip) return iface.mac;
+    }
+  }
+  return null;
+}
