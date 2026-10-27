@@ -9,6 +9,7 @@
   <div class="tools">
     <button onclick={() => player.add('host')}>+ Computer</button>
     <button onclick={() => player.add('switch')}>+ Switch</button>
+    <button onclick={() => player.add('hub')}>+ Hub</button>
     <button onclick={() => player.add('router')}>+ Router</button>
     <button class:on={player.cableTool} aria-pressed={player.cableTool} onclick={() => { player.cableTool = !player.cableTool; player.cableFrom = null; player.editMessage = ''; }}>
       Cable

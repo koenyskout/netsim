@@ -123,6 +123,15 @@ export interface Switch {
   macTable: MacEntry[];
 }
 
+/** A hub cannot read addresses: whatever comes in on one port goes out of all the others. */
+export interface Hub {
+  kind: 'hub';
+  id: string;
+  name: string;
+  /** Hub ports; they have no addresses of their own. */
+  interfaces: Interface[];
+}
+
 export interface Route {
   network: string;
   prefix: number;
@@ -164,7 +173,12 @@ export interface Router {
   arpTable?: ArpEntry[];
 }
 
-export type Device = Host | Switch | Router;
+export type Device = Host | Switch | Hub | Router;
+
+/** Hosts and routers have IP addresses; switches and hubs only pass frames on. */
+export function hasAddresses(d: Device): d is Host | Router {
+  return d.kind === 'host' || d.kind === 'router';
+}
 
 export interface Endpoint {
   device: string;

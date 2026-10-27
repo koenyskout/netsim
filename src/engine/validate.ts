@@ -1,5 +1,5 @@
 import { isValidIp, networkLabel, sameNetwork } from './addressing';
-import type { Topology } from './model';
+import { hasAddresses, type Topology } from './model';
 
 /** A friendly hint about a configuration. Never blocks anything: broken networks are allowed. */
 export interface Warning {
@@ -11,7 +11,7 @@ const w = (text: string): Warning => ({ text });
 /** Everything that looks wrong about one device's configuration. */
 export function warningsFor(topo: Topology, deviceId: string): Warning[] {
   const device = topo.devices[deviceId];
-  if (!device || device.kind === 'switch') return [];
+  if (!device || !hasAddresses(device)) return [];
   const out: Warning[] = [];
 
   for (const iface of device.interfaces) {
@@ -25,7 +25,7 @@ export function warningsFor(topo: Topology, deviceId: string): Warning[] {
     }
     for (const other of Object.values(topo.devices)) {
       for (const o of other.interfaces) {
-        if ((other.id !== device.id || o.id !== iface.id) && o.ip === iface.ip && other.kind !== 'switch') {
+        if ((other.id !== device.id || o.id !== iface.id) && o.ip === iface.ip && hasAddresses(other)) {
           out.push(w(`${label}${iface.ip} is also used by ${other.name}. Two devices with one address will confuse the network.`));
         }
       }

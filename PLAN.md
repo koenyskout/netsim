@@ -12,6 +12,7 @@ A visual, step-by-step network simulator for an introductory networking course. 
 | IP | Identifies a device across networks; stays end to end | IP chips stay while MACs change |
 | Ports | Direct a packet to the right *application* on a host | Packet drops into the app that opened the port |
 | Switch | Learns which MAC is behind which port; floods when unsure | MAC table fills in; flood is visible |
+| Hub (contrast) | Repeats every frame out of all other ports; never learns | Everyone receives everything; compare with the switch |
 | ARP | Finds the MAC address for an IP on the local network | Broadcast question, direct answer, ARP table fills in |
 | Router | Picks the next hop by destination network | Matching route row lights up |
 | NAT | Many private devices share one public address; ports tell them apart | Source IP/port rewritten; table row links the reply back |
@@ -43,7 +44,7 @@ A visual, step-by-step network simulator for an introductory networking course. 
 Packet card is nested boxes, one colour band and label per layer:
 Link (MAC src/dst) > Network (IP src/dst) > Transport (ports) > Application (message).
 - Sending: envelopes close around the message (wrap). Arriving: peeled in reverse (unwrap).
-- **A device opens only as many layers as its role needs**: switch = link only; router = link + network (rebuilds link envelope for next hop); NAT = also transport (rewrites port); host = all.
+- **A device opens only as many layers as its role needs**: hub and switch = link only; router = link + network (rebuilds link envelope for next hop); NAT = also transport (rewrites port); host = all.
 - Addresses are colour-coded chips with short labels/shapes (not colour alone). Changes animate: MAC chips swap at routers, source IP/port morph at NAT with a glowing link to the NAT-table row, name dissolves into IP at DNS. Ghost of "before" fades next to "after".
 - Compact mode while moving (chips only); full card on pause/hover.
 
@@ -73,7 +74,7 @@ Events: packet created, layer added, travels on link, layer opened, table lookup
 Packets are layered objects (array of headers + payload). Each device declares the highest layer it processes.
 
 ### Configuration
-Per interface: IP, mask (CIDR or dotted). Host: default gateway, apps/open ports, optional DNS server / use DHCP. Router: per-interface addresses, editable routing table, NAT toggle with inside/outside interfaces and port-forward rules. Switch: nothing. Inline friendly warnings (never blocking) so students can build broken networks.
+Per interface: IP, mask (CIDR or dotted). Host: default gateway, apps/open ports, optional DNS server / use DHCP. Router: per-interface addresses, editable routing table, NAT toggle with inside/outside interfaces and port-forward rules. Switch and hub: nothing. Inline friendly warnings (never blocking) so students can build broken networks.
 
 ### Delivery outcome
 Every run ends with a banner: delivered to *app X on host Y*, or not delivered *because...* Dropped packets stop visibly at the failing device with a red marker.

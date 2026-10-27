@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ArpEntry, Device, Layer, MacEntry, NatEntry } from '../engine/model';
+  import { hasAddresses, type ArpEntry, type Device, type Layer, type MacEntry, type NatEntry } from '../engine/model';
   import { arpKey, forwardKey, natKey, routeRows } from '../engine/routes';
   import Chip from './Chip.svelte';
 
@@ -75,6 +75,13 @@
         <rect x="8" y="4" width="48" height="30" rx="3" fill="none" stroke="currentColor" stroke-width="3" />
         <path d="M24 44h16M32 34v10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
       </svg>
+    {:else if device.kind === 'hub'}
+      <!-- A dot with waves on both sides: the signal goes out everywhere. -->
+      <svg viewBox="0 0 64 48" aria-hidden="true">
+        <rect x="4" y="12" width="56" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3" />
+        <circle cx="32" cy="24" r="3.5" fill="currentColor" />
+        <path d="M25 18a9 9 0 0 0 0 12M39 18a9 9 0 0 1 0 12M19 15a14 14 0 0 0 0 18M45 15a14 14 0 0 1 0 18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" />
+      </svg>
     {:else if device.kind === 'switch'}
       <svg viewBox="0 0 64 48" aria-hidden="true">
         <rect x="4" y="12" width="56" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3" />
@@ -92,7 +99,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="info" onclick={onselect}>
     <div class="name">{device.name}</div>
-    {#if device.kind !== 'switch'}
+    {#if hasAddresses(device)}
       {#each device.interfaces as iface (iface.id)}
         <div class="addr">
           {#if device.kind === 'router'}<span class="ifname">{iface.id}</span>{/if}

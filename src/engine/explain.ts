@@ -53,7 +53,7 @@ export const DROP_TEXT: Record<DropReason, DropText> = {
   },
   'wrong-mac': {
     title: 'Not for me',
-    text: 'The destination MAC address is not this device, so it ignores the frame. This is normal when a switch floods.',
+    text: 'The destination MAC address is not this device, so it ignores the frame. This is normal when a switch floods or a hub repeats.',
   },
   filtered: {
     title: 'Same port',
@@ -114,7 +114,7 @@ export const captions = {
   arpOpen: (device: string) => `${device} opens the frame and finds an ARP message inside.`,
   arpUpdate: (device: string, ip: string, mac: string) => `${device} writes the answer in its ARP table: ${ip} → ${mac}.`,
   transmit: (from: string, to: string) => `The frame travels over the cable from ${from} to ${to}.`,
-  open: (device: string, layer: Layer, kind: 'host' | 'switch' | 'router') => {
+  open: (device: string, layer: Layer, kind: 'host' | 'switch' | 'hub' | 'router') => {
     if (kind === 'switch')
       return 'The switch only opens the link layer to read the MAC addresses. The inner layers stay sealed.';
     if (kind === 'router' && layer === 'link')
@@ -129,6 +129,10 @@ export const captions = {
     `The switch learns: ${mac} is reachable via port ${port}.`,
   macLookup: (dst: string, port: string | null) =>
     port ? `The switch knows ${dst} is behind port ${port} and forwards the frame only there.` : `The switch has never seen ${dst}.`,
+  repeat: (ports: string[]) =>
+    ports.length === 0
+      ? 'The hub has no other cables, so the frame goes nowhere.'
+      : `The hub cannot read addresses, so it repeats the frame out of every other port (${ports.join(', ')}). Everyone connected receives it.`,
   flood: (dst: string, ports: string[]) =>
     dst === 'FF:FF:FF:FF:FF:FF'
       ? `Broadcast address: the switch sends the frame out of all other ports (${ports.join(', ')}).`

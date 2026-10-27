@@ -80,3 +80,16 @@ export function homeNat(opts: { forward?: boolean } = {}) {
     .connect('friend.eth0', 'net.p3')
     .build();
 }
+
+/** Three hosts on one hub. h2 runs a web app on port 80 that replies. */
+export function oneHub() {
+  return new TopologyBuilder()
+    .host('h1', { ip: '10.0.0.1', prefix: 24 })
+    .host('h2', { ip: '10.0.0.2', prefix: 24, apps: [{ name: 'Web', port: 80, reply: 'OK' }] })
+    .host('h3', { ip: '10.0.0.3', prefix: 24 })
+    .hub('hub')
+    .connect('h1.eth0', 'hub.p1')
+    .connect('h2.eth0', 'hub.p2')
+    .connect('h3.eth0', 'hub.p3')
+    .build();
+}

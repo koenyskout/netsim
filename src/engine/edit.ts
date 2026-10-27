@@ -2,14 +2,15 @@ import type { Device, Interface, Topology } from './model';
 
 /** Pure-ish helpers to change the shape of a network. They mutate the topology they are given. */
 
-export type NewKind = 'host' | 'switch' | 'router';
+export type NewKind = 'host' | 'switch' | 'hub' | 'router';
 export type Positions = Record<string, { x: number; y: number }>;
 
-const MAX_INTERFACES: Record<'switch' | 'router', number> = { switch: 8, router: 4 };
+const MAX_INTERFACES: Record<'switch' | 'hub' | 'router', number> = { switch: 8, hub: 8, router: 4 };
 
 const LABEL: Record<NewKind, { id: string; name: string }> = {
   host: { id: 'pc', name: 'PC' },
   switch: { id: 'sw', name: 'Switch' },
+  hub: { id: 'hub', name: 'Hub' },
   router: { id: 'r', name: 'Router' },
 };
 
@@ -45,6 +46,10 @@ export function addDevice(topo: Topology, kind: NewKind): string {
     device = { kind, id, name, interfaces: [], macTable: [] };
     topo.devices[id] = device;
     for (let i = 1; i <= 4; i++) device.interfaces.push(iface(`p${i}`));
+  } else if (kind === 'hub') {
+    device = { kind, id, name, interfaces: [] };
+    topo.devices[id] = device;
+    for (let i = 1; i <= 4; i++) device.interfaces.push(iface(`p${i}`));
   } else {
     device = { kind, id, name, interfaces: [], routes: [] };
     topo.devices[id] = device;
@@ -67,7 +72,7 @@ function takeInterface(topo: Topology, device: Device): Interface | null {
   if (device.kind === 'host') return null;
   if (device.interfaces.length >= MAX_INTERFACES[device.kind]) return null;
   const n = device.interfaces.length;
-  const created: Interface = { id: device.kind === 'switch' ? `p${n + 1}` : `eth${n}`, mac: nextMac(topo) };
+  const created: Interface = { id: device.kind === 'router' ? `eth${n}` : `p${n + 1}`, mac: nextMac(topo) };
   device.interfaces.push(created);
   return created;
 }

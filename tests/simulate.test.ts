@@ -3,7 +3,7 @@ import type { SimEvent } from '../src/engine/events';
 import { simulate } from '../src/engine/simulate';
 import { header } from '../src/engine/model';
 import type { SendAction } from '../src/engine/model';
-import { oneSwitch, twoNetworks } from './fixtures';
+import { oneHub, oneSwitch, twoNetworks } from './fixtures';
 
 const send = (from: string, dstIp: string, dstPort: number): SendAction => ({
   type: 'send',
@@ -81,6 +81,19 @@ describe('hosts on a switch', () => {
       'network',
       'link',
     ]);
+  });
+});
+
+describe('hosts on a hub', () => {
+  it('delivers, but repeats every frame to everyone, every time', () => {
+    const first = simulate(oneHub(), send('h1', '10.0.0.2', 80));
+    expect(first.outcome).toMatchObject({ delivered: true, replyDelivered: true });
+    expect(first.events.some((e) => e.kind === 'learn' || (e.kind === 'open-layer' && e.device === 'hub'))).toBe(false);
+    const second = simulate(first.topology, send('h1', '10.0.0.2', 80));
+    // No ARP the second time, yet h3 still sees the message and its reply.
+    expect(second.events.filter((e) => e.kind === 'flood')).toHaveLength(2);
+    const ignored = second.events.filter((e) => e.kind === 'drop' && e.device === 'h3');
+    expect(ignored.map((e) => e.kind === 'drop' && e.reason)).toEqual(['wrong-mac', 'wrong-mac']);
   });
 });
 

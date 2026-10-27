@@ -1,6 +1,6 @@
 <script lang="ts">
   import { networkLabel, prefixToDotted } from '../engine/addressing';
-  import type { Host, Router } from '../engine/model';
+  import { hasAddresses, type Host, type Router } from '../engine/model';
   import { forwardKey } from '../engine/routes';
   import { routeRows, staticKey } from '../engine/routes';
   import { warningsFor } from '../engine/validate';
@@ -138,6 +138,13 @@
         </div>
       {/if}
 
+      {#if device.kind === 'hub'}
+        <p class="hint">
+          A hub has no settings and no IP address. It cannot read MAC addresses either: it repeats every frame out of all
+          its other ports, so everyone connected receives everything.
+        </p>
+      {/if}
+
       {#if device.kind === 'switch'}
         <p class="hint">
           A switch has no settings and no IP address. It only learns which MAC address is behind which port.
@@ -147,7 +154,7 @@
         </button>
       {/if}
 
-      {#if device.kind !== 'switch'}
+      {#if hasAddresses(device)}
         {#each device.interfaces as iface (iface.id)}
           <fieldset>
             <legend>{device.kind === 'router' ? `Interface ${iface.id}` : 'Network settings'}</legend>
@@ -340,7 +347,7 @@
         </fieldset>
       {/if}
 
-      {#if device.kind !== 'switch'}
+      {#if hasAddresses(device)}
         {@const arpRows = player.arpTables[device.id] ?? []}
         <fieldset>
           <legend>ARP table</legend>
@@ -353,12 +360,12 @@
             {/each}
           </ul>
           {#if arpRows.length > 0}
-            <button onclick={() => player.edit(device.id, (d) => d.kind !== 'switch' && delete d.arpTable)}>Forget ARP table</button>
+            <button onclick={() => player.edit(device.id, (d) => hasAddresses(d) && delete d.arpTable)}>Forget ARP table</button>
           {/if}
         </fieldset>
       {/if}
 
-      {#if device.kind !== 'switch'}
+      {#if hasAddresses(device)}
         {#if player.showHints}
           {#if warnings.length > 0}
             <ul class="warnings" aria-label="Hints">

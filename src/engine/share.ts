@@ -1,6 +1,6 @@
 import { isValidIp } from './addressing';
 import { freeSpot, type Positions } from './edit';
-import type { App, DhcpServer, Device, DnsRecord, Interface, Topology } from './model';
+import { hasAddresses, type App, type DhcpServer, type Device, type DnsRecord, type Interface, type Topology } from './model';
 
 /** A network and where its devices sit on the stage: what gets saved, exported and shared. */
 export interface Scene {
@@ -16,7 +16,7 @@ export type ParseResult = { ok: true; scene: Scene } | { ok: false; error: strin
 export function exportScene(scene: Scene): string {
   const devices: Record<string, unknown> = {};
   for (const [id, learned] of Object.entries(scene.topology.devices)) {
-    const d = learned.kind === 'switch' ? learned : { ...learned, arpTable: undefined };
+    const d = hasAddresses(learned) ? { ...learned, arpTable: undefined } : learned;
     if (d.kind === 'switch') devices[id] = { ...d, macTable: [] };
     else if (d.kind === 'host' && d.dhcpServer) devices[id] = { ...d, dhcpServer: { ...d.dhcpServer, leases: [] } };
     else if (d.kind === 'router' && d.nat) devices[id] = { ...d, nat: { ...d.nat, table: [] } };
@@ -128,6 +128,8 @@ export function parseScene(text: string): ParseResult {
         ...(dnsRecords ? { dnsRecords } : {}),
         ...(dhcpServer ? { dhcpServer } : {}),
       };
+    } else if (raw.kind === 'hub') {
+      devices[id] = { kind: 'hub', ...base };
     } else if (raw.kind === 'switch') {
       devices[id] = { kind: 'switch', ...base, macTable: [] };
     } else if (raw.kind === 'router') {

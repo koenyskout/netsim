@@ -19,10 +19,12 @@ export const LAYER_META: Record<Layer, LayerMeta> = {
 export const ARP_META: LayerMeta = { name: 'ARP', purpose: 'which MAC belongs to this IP?', color: 'var(--c-arp)' };
 
 /** Which layers each kind of device works at. */
-export const DEVICE_LAYERS: Record<'host' | 'switch' | 'router', readonly Layer[]> = {
+export const DEVICE_LAYERS: Record<'host' | 'switch' | 'hub' | 'router', readonly Layer[]> = {
   host: ['application', 'transport', 'network', 'link'],
   router: ['network', 'link'],
   switch: ['link'],
+  // Really below the link layer: a hub only repeats signals. It is drawn at the bottom of the stack.
+  hub: ['link'],
 };
 
 /** Stable hue (0-359) for an address, so the same address always has the same colour. */

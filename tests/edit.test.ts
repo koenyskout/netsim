@@ -94,6 +94,15 @@ describe('sharing', () => {
     }
   });
 
+  it('round-trips a hub', () => {
+    const t = empty();
+    const hub = addDevice(t, 'hub');
+    const pc = addDevice(t, 'host');
+    expect(connectDevices(t, pc, hub)).toBeNull();
+    const parsed = parseScene(exportScene({ topology: t, positions: { [hub]: { x: 300, y: 300 }, [pc]: { x: 100, y: 100 } } }));
+    expect(parsed.ok && parsed.scene.topology).toEqual(t);
+  });
+
   it('leaves learned tables out', () => {
     const p = presets.find((x) => x.id === 'nat')!;
     const action = p.suggestions[0].action;

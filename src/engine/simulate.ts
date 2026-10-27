@@ -22,6 +22,8 @@ import {
   type Router,
   type SendAction,
   type Switch,
+  type Hub,
+  hasAddresses,
   type Topology,
 } from './model';
 
@@ -76,7 +78,7 @@ export function simulate(before: Topology, action: Action): SimResult {
   const initialArpTables: Record<string, ArpEntry[]> = {};
   for (const d of Object.values(before.devices)) {
     if (d.kind === 'switch') initialMacTables[d.id] = structuredClone(d.macTable);
-    else initialArpTables[d.id] = structuredClone(d.arpTable ?? []);
+    else if (hasAddresses(d)) initialArpTables[d.id] = structuredClone(d.arpTable ?? []);
   }
 
   const sender = topo.devices[action.from];
@@ -370,6 +372,7 @@ function receiveArp(ctx: Ctx, device: Host | Router, p: Pending): void {
 function receive(ctx: Ctx, p: Pending): void {
   const device = ctx.topo.devices[p.device];
   if (device.kind === 'switch') receiveSwitch(ctx, device, p);
+  else if (device.kind === 'hub') receiveHub(ctx, device, p);
   else if (device.kind === 'router') receiveRouter(ctx, device, p);
   else receiveHost(ctx, device, p);
 }
@@ -439,6 +442,15 @@ function receiveSwitch(ctx: Ctx, sw: Switch, p: Pending): void {
     caption: captions.flood(link.dstMac, ports),
   });
   for (const port of ports) transmit(ctx, sw.id, port, p.packet, ctx.nextPid++, pid);
+}
+
+/** A hub does not look inside at all: it repeats the frame out of every other port. */
+function receiveHub(ctx: Ctx, hub: Hub, p: Pending): void {
+  const ports = hub.interfaces
+    .filter((i) => i.id !== p.iface && peerOf(ctx.topo, hub.id, i.id))
+    .map((i) => i.id);
+  ctx.events.push({ kind: 'flood', device: hub.id, pid: p.pid, ports, packet: p.packet, caption: captions.repeat(ports) });
+  for (const port of ports) transmit(ctx, hub.id, port, p.packet, ctx.nextPid++, p.pid);
 }
 
 function receiveHost(ctx: Ctx, host: Host, p: Pending): void {

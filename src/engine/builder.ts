@@ -55,6 +55,11 @@ export class TopologyBuilder {
     return this.add(host);
   }
 
+  hub(id: string, opts: { name?: string; ports?: number } = {}): this {
+    const interfaces = Array.from({ length: opts.ports ?? 4 }, (_, i) => ({ id: `p${i + 1}`, mac: this.mac() }));
+    return this.add({ kind: 'hub', id, name: opts.name ?? id, interfaces });
+  }
+
   switch(id: string, opts: { name?: string; ports?: number } = {}): this {
     const interfaces = Array.from({ length: opts.ports ?? 4 }, (_, i) => ({
       id: `p${i + 1}`,
