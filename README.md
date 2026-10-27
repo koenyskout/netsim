@@ -4,6 +4,10 @@ A visual, step-by-step network simulator for an introductory networking course. 
 
 Students set up hosts (IP, mask, gateway), send a message and watch it travel hop by hop, layer by layer. At the end they see **whether it arrived, and why or why not**. It is built for lectures on a projector first; students can play with it afterwards.
 
+**Try it:** <https://koenyskout.github.io/netsim/>
+
+![NetSim stepping through the NAT scenario: the home router has just swapped the private source address for its public one and recorded the mapping in its NAT table.](docs/screenshot.png)
+
 ## Features
 
 - **Guided tour**: numbered scenarios, from two PCs on one switch to a home network behind NAT.
