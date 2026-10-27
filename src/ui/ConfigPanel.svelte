@@ -5,6 +5,7 @@
   import { routeRows, staticKey } from '../engine/routes';
   import { warningsFor } from '../engine/validate';
   import Field from './Field.svelte';
+  import TrashButton from './TrashButton.svelte';
   import { parseIpField, parseMaskField, parsePortField } from './fields';
   import type { Player } from './player.svelte';
 
@@ -132,7 +133,7 @@
               }}
             />
           </label>
-          <button onclick={() => player.remove(device.id)}>Delete device</button>
+          <TrashButton label="Delete {device.name}" onclick={() => player.remove(device.id)} />
         </div>
       {/if}
 

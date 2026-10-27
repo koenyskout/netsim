@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Player } from './player.svelte';
+  import TrashButton from './TrashButton.svelte';
 
   let { player }: { player: Player } = $props();
 </script>
@@ -12,11 +13,11 @@
     <button class:on={player.cableTool} aria-pressed={player.cableTool} onclick={() => { player.cableTool = !player.cableTool; player.cableFrom = null; player.editMessage = ''; }}>
       Cable
     </button>
-    <button
+    <TrashButton
+      label="Delete the selected device"
       disabled={!player.selected}
       onclick={() => player.selected && player.remove(player.selected)}
-      title="Delete the selected device"
-    >Delete device</button>
+    />
   </div>
   <p class="help" class:error={player.editMessage !== ''}>
     {#if player.editMessage}

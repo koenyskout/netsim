@@ -159,14 +159,16 @@
       <div class="caption" aria-live="polite">
         {#if player.result && player.atEnd}<Outcome {player} />{:else}{caption}{/if}
       </div>
-      <Stage {player} />
-      {#if player.editMode}<EditBar {player} />{/if}
-      {#if !panelOpen}
-        <div class="reopen">
-          <button onclick={() => openTab('packet')} title="Show what is inside the message (I)">Packet</button>
-          <button onclick={() => openTab('layers')} title="Show the four layers">Layers</button>
-        </div>
-      {/if}
+      <div class="picture">
+        <Stage {player} />
+        {#if player.editMode}<EditBar {player} />{/if}
+        {#if !panelOpen}
+          <div class="reopen">
+            <button onclick={() => openTab('packet')} title="Show what is inside the message (I)">Packet</button>
+            <button onclick={() => openTab('layers')} title="Show the four layers">Layers</button>
+          </div>
+        {/if}
+      </div>
     </div>
     {#if panelOpen}
       <Aside
@@ -280,9 +282,17 @@
     background: color-mix(in srgb, var(--accent) 7%, var(--panel));
     border-bottom: 1px solid var(--line);
   }
+  /* Toolbars float over the picture, not over the caption. */
+  .picture {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
   .reopen {
     position: absolute;
-    top: 4rem;
+    top: 0.5rem;
     right: 0.5rem;
     display: flex;
     gap: 0.4rem;
