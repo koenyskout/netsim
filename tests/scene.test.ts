@@ -16,7 +16,7 @@ describe('sceneAt', () => {
 
   it('shows one token wrapped step by step on the sending host', () => {
     const { events } = run();
-    const afterLink = events.findIndex((e) => e.kind === 'add-layer' && e.layer === 'link') + 1;
+    const afterLink = events.findIndex((e) => e.kind === 'add-layer' && e.layer === 'link' && !e.packet.service) + 1;
     const s = sceneAt(events, afterLink);
     expect(s.tokens).toHaveLength(1);
     expect(s.tokens[0].device).toBe('h1');
@@ -28,7 +28,7 @@ describe('sceneAt', () => {
     const { events } = run();
     const i = events.findIndex((e) => e.kind === 'transmit') + 1;
     const s = sceneAt(events, i);
-    expect(s.tokens[0].device).toBe('sw');
+    expect(s.tokens.find((t) => t.pid === events[i - 1].pid)?.device).toBe('sw');
     expect(s.litLink).toMatchObject({ from: 'h1', to: 'sw', toIface: 'p1' });
   });
 
@@ -36,7 +36,7 @@ describe('sceneAt', () => {
     const { events } = run();
     const lastCopyTransmit = events.map((e) => e.kind === 'transmit' && e.copyOf !== undefined).lastIndexOf(true);
     const s = sceneAt(events, lastCopyTransmit + 1);
-    expect(s.tokens.map((t) => t.device).sort()).toEqual(['h2', 'h3']);
+    expect(s.tokens.filter((t) => !t.waiting).map((t) => t.device).sort()).toEqual(['h2', 'h3']);
     expect(s.tokens.find((t) => t.device === 'h2')?.spawnFrom).toBe('sw');
   });
 
@@ -54,6 +54,17 @@ describe('sceneAt', () => {
     const s = sceneAt(r.events, r.events.length);
     expect(s.tokens).toHaveLength(1);
     expect(s.tokens[0]).toMatchObject({ device: 'r1', status: 'dropped' });
+  });
+
+  it('parks a message that waits for an ARP answer, and ends the ARP message once it is answered', () => {
+    const { events } = run();
+    const ask = events.findIndex((e) => e.kind === 'create' && e.packet.service === 'arp');
+    const during = sceneAt(events, ask + 1);
+    expect(during.tokens.find((t) => t.pid === events[0].pid)).toMatchObject({ device: 'h1', waiting: true });
+    const learned = events.findIndex((e) => e.kind === 'arp-learn' && e.device === 'h1');
+    const after = sceneAt(events, learned + 2);
+    expect(after.tokens.some((t) => t.packet.service === 'arp')).toBe(false);
+    expect(after.tokens.find((t) => t.pid === events[0].pid)?.waiting).toBe(false);
   });
 
   it('marks the layer being opened', () => {

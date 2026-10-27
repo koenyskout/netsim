@@ -1,6 +1,6 @@
 # NetSim
 
-A visual, step-by-step network simulator for an introductory networking course. It covers MAC addresses, IP addresses, ports, switches, routing and NAT, plus basic DHCP and DNS.
+A visual, step-by-step network simulator for an introductory networking course. It covers MAC addresses, IP addresses, ports, switches, ARP, routing and NAT, plus basic DHCP and DNS.
 
 Students set up hosts (IP, mask, gateway), send a message and watch it travel hop by hop, layer by layer. At the end they see **whether it arrived, and why or why not**. It is built for lectures on a projector first; students can play with it afterwards.
 

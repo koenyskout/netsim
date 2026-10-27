@@ -28,6 +28,7 @@
       <Envelope
         headers={focus.packet.headers}
         message={focus.packet.message}
+        arp={focus.packet.arp}
         opening={focus.opening}
         {added}
         {ghost}

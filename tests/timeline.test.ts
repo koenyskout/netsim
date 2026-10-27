@@ -53,4 +53,14 @@ describe('Timeline', () => {
     t.seek(0);
     expect(t.macTables().sw).toEqual([]);
   });
+
+  it('rebuilds the ARP tables at any position', () => {
+    const t = new Timeline(run());
+    expect(t.arpTables().h1).toEqual([]);
+    t.seek(t.length);
+    expect(t.arpTables().h1).toEqual([{ ip: '10.0.0.2', mac: expect.any(String) }]);
+    expect(t.arpTables().h2).toEqual([{ ip: '10.0.0.1', mac: expect.any(String) }]);
+    t.seek(0);
+    expect(t.arpTables().h2).toEqual([]);
+  });
 });

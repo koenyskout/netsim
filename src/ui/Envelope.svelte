@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Header, Layer } from '../engine/model';
+  import type { ArpMessage, Header, Layer } from '../engine/model';
   import Chip from './Chip.svelte';
   import Envelope from './Envelope.svelte';
-  import { LAYER_META } from './colors';
+  import { ARP_META, LAYER_META } from './colors';
 
   /** Old values that were just replaced, by field name. */
   type Ghost = Record<string, string | number>;
@@ -10,6 +10,7 @@
   let {
     headers,
     message,
+    arp,
     opening,
     added,
     ghost,
@@ -17,6 +18,8 @@
     /** Outermost header first. */
     headers: Header[];
     message: string;
+    /** An ARP question or answer instead of an application message. */
+    arp?: ArpMessage;
     /** Layer currently being opened. */
     opening?: Layer;
     /** Layer that was just added. */
@@ -26,7 +29,7 @@
 
   const head = $derived(headers[0]);
   const layer: Layer = $derived(head ? head.layer : 'application');
-  const meta = $derived(LAYER_META[layer]);
+  const meta = $derived(!head && arp ? ARP_META : LAYER_META[layer]);
 </script>
 
 {#key layer}
@@ -60,13 +63,18 @@
         <span class="arrow">→</span>
         {#if ghost?.dstPort !== undefined}<Chip kind="port" value={ghost.dstPort} ghost />{/if}
         <Chip kind="port" value={head.dstPort} changed={ghost?.dstPort !== undefined} />
+      {:else if arp?.op === 'request'}
+        <span class="message">Who has</span> <Chip kind="ip" value={arp.targetIp} /><span class="message">?</span>
+        <span class="tell">Tell <Chip kind="ip" value={arp.senderIp} /> <Chip kind="mac" value={arp.senderMac} /></span>
+      {:else if arp}
+        <Chip kind="ip" value={arp.senderIp} /> <span class="message">is at</span> <Chip kind="mac" value={arp.senderMac} />
       {:else}
         <span class="message">“{message}”</span>
       {/if}
     </div>
 
     {#if head}
-      <Envelope headers={headers.slice(1)} {message} {opening} {added} {ghost} />
+      <Envelope headers={headers.slice(1)} {message} {arp} {opening} {added} {ghost} />
     {/if}
   </div>
 {/key}
@@ -108,6 +116,12 @@
     font-size: 1rem;
   }
   .arrow {
+    color: var(--muted);
+  }
+  .tell {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     color: var(--muted);
   }
   .message {

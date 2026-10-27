@@ -1,6 +1,6 @@
 import type { SimResult } from './events';
 import type { SimEvent } from './events';
-import type { MacEntry, NatEntry } from './model';
+import type { ArpEntry, MacEntry, NatEntry } from './model';
 
 /**
  * A cursor over the events of one simulation run. `position` is the number of
@@ -10,12 +10,14 @@ export class Timeline {
   readonly events: readonly SimEvent[];
   private readonly initialMacTables: Record<string, MacEntry[]>;
   private readonly initialNatTables: Record<string, NatEntry[]>;
+  private readonly initialArpTables: Record<string, ArpEntry[]>;
   position = 0;
 
-  constructor(result: Pick<SimResult, 'events' | 'initialMacTables' | 'initialNatTables'>) {
+  constructor(result: Pick<SimResult, 'events' | 'initialMacTables' | 'initialNatTables' | 'initialArpTables'>) {
     this.events = result.events;
     this.initialMacTables = result.initialMacTables;
     this.initialNatTables = result.initialNatTables;
+    this.initialArpTables = result.initialArpTables;
   }
 
   get length(): number {
@@ -79,6 +81,16 @@ export class Timeline {
     for (let i = 0; i < this.position; i++) {
       const e = this.events[i];
       if (e.kind === 'nat') tables[e.device] = structuredClone(e.natTable);
+    }
+    return tables;
+  }
+
+  /** The ARP tables of hosts and routers as they were at the current position. */
+  arpTables(): Record<string, ArpEntry[]> {
+    const tables = structuredClone(this.initialArpTables);
+    for (let i = 0; i < this.position; i++) {
+      const e = this.events[i];
+      if (e.kind === 'arp-learn') tables[e.device] = structuredClone(e.arpTable);
     }
     return tables;
   }

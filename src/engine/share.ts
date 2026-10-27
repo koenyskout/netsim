@@ -12,10 +12,11 @@ const FORMAT = 'netsim/1';
 
 export type ParseResult = { ok: true; scene: Scene } | { ok: false; error: string };
 
-/** Learned state (MAC tables, NAT table) is not part of the design, so it is left out. */
+/** Learned state (MAC, ARP and NAT tables, leases) is not part of the design, so it is left out. */
 export function exportScene(scene: Scene): string {
   const devices: Record<string, unknown> = {};
-  for (const [id, d] of Object.entries(scene.topology.devices)) {
+  for (const [id, learned] of Object.entries(scene.topology.devices)) {
+    const d = learned.kind === 'switch' ? learned : { ...learned, arpTable: undefined };
     if (d.kind === 'switch') devices[id] = { ...d, macTable: [] };
     else if (d.kind === 'host' && d.dhcpServer) devices[id] = { ...d, dhcpServer: { ...d.dhcpServer, leases: [] } };
     else if (d.kind === 'router' && d.nat) devices[id] = { ...d, nat: { ...d.nat, table: [] } };

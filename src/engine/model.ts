@@ -30,9 +30,25 @@ export interface Packet {
   message: string;
   isReply?: boolean;
   /** Set on packets that belong to a helper protocol, so the outcome only judges the real message. */
-  service?: 'dns' | 'dhcp';
+  service?: 'dns' | 'dhcp' | 'arp';
   /** What the helper protocol carries (the name asked for, the address handed out, ...). */
   data?: Record<string, string>;
+  /** The contents of an ARP question or answer (an ARP packet has a link header and nothing else). */
+  arp?: ArpMessage;
+}
+
+/** "Who has <targetIp>? Tell <senderIp>", or the answer "<senderIp> is at <senderMac>". */
+export interface ArpMessage {
+  op: 'request' | 'reply';
+  senderIp: string;
+  senderMac: string;
+  targetIp: string;
+}
+
+/** One remembered answer: this IP address belongs to this MAC address. */
+export interface ArpEntry {
+  ip: string;
+  mac: string;
 }
 
 export const LIMITED_BROADCAST = '255.255.255.255';
@@ -89,6 +105,8 @@ export interface Host {
   dnsRecords?: DnsRecord[];
   /** Present when this computer is a DHCP server (it listens on port 67). */
   dhcpServer?: DhcpServer;
+  /** Learned by ARP; survives between runs like a switch's MAC table. */
+  arpTable?: ArpEntry[];
 }
 
 export interface MacEntry {
@@ -142,6 +160,8 @@ export interface Router {
   routes: Route[];
   /** Present when the router does network address translation. */
   nat?: NatConfig;
+  /** Learned by ARP; survives between runs like a switch's MAC table. */
+  arpTable?: ArpEntry[];
 }
 
 export type Device = Host | Switch | Router;
@@ -191,6 +211,7 @@ export type DropReason =
   | 'gateway-unreachable'
   | 'no-route'
   | 'no-arp-reply'
+  | 'arp-not-me'
   | 'port-closed'
   | 'wrong-ip'
   | 'wrong-mac'
@@ -204,7 +225,7 @@ export type DropReason =
   | 'loop';
 
 /** Reasons that are normal network behaviour and not a failure of the message. */
-export const INSIGNIFICANT_DROPS: readonly DropReason[] = ['wrong-mac', 'filtered', 'broadcast', 'ignored'];
+export const INSIGNIFICANT_DROPS: readonly DropReason[] = ['wrong-mac', 'filtered', 'broadcast', 'ignored', 'arp-not-me'];
 
 export function header<L extends Header['layer']>(
   packet: Packet,

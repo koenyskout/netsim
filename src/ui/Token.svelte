@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import type { Layer } from '../engine/model';
-  import { LAYER_META } from './colors';
+  import { ARP_META, LAYER_META } from './colors';
   import type { Token } from './scene';
 
   let {
@@ -26,6 +26,8 @@
   const layers: Layer[] = $derived([...token.packet.headers.map((h) => h.layer), 'application']);
   const rings = $derived(layers.length - 1);
   const outer = $derived(layers[0]);
+  const arp = $derived(token.packet.arp);
+  const coreColor = $derived(arp ? ARP_META.color : LAYER_META.application.color);
 
   // Start at the spawn point (if any) and move to the real position on the next frame.
   let px = $state(untrack(() => spawn?.x ?? x));
@@ -51,21 +53,23 @@
   });
 </script>
 
-<div class="token" style="transform: translate({px}px, {py}px)" transition:fade={{ duration: 200 }}>
+<div class="token" class:waiting={token.waiting} style="transform: translate({px}px, {py}px)" transition:fade={{ duration: 200 }}>
   <div class="box" style="width:{CORE_W + 2 * PAD * rings}px; height:{CORE_H + 2 * PAD * rings}px">
     {#each layers as layer, i (layer)}
       <div
         class="ring"
         class:opening={token.opening === layer}
         class:core={layer === 'application'}
-        style="inset:{i * PAD}px; --lc:{LAYER_META[layer].color}"
+        class:arp={layer === 'application' && arp}
+        style="inset:{i * PAD}px; --lc:{layer === 'application' ? coreColor : LAYER_META[layer].color}"
       >
-        {#if layer === 'application'}✉{/if}
+        {#if layer === 'application'}{arp ? (arp.op === 'request' ? 'ARP ?' : 'ARP !') : '✉'}{/if}
       </div>
     {/each}
-    <div class="tag" style="--lc:{LAYER_META[outer].color}">{LAYER_META[outer].name}</div>
+    <div class="tag" style="--lc:{outer === 'application' ? coreColor : LAYER_META[outer].color}">{outer === 'application' && arp ? ARP_META.name : LAYER_META[outer].name}</div>
     {#if token.status === 'dropped'}<div class="badge bad">✕</div>{/if}
     {#if token.status === 'delivered'}<div class="badge good">✓</div>{/if}
+    {#if token.waiting}<div class="badge wait" title="Waiting for an ARP answer">⏳</div>{/if}
   </div>
 </div>
 
@@ -77,6 +81,9 @@
     z-index: 5;
     pointer-events: none;
     transition: transform var(--dur, 800ms) cubic-bezier(0.45, 0.05, 0.3, 1);
+  }
+  .waiting {
+    opacity: 0.6;
   }
   .box {
     position: absolute;
@@ -98,6 +105,11 @@
     place-items: center;
     font-size: 17px;
     color: var(--lc);
+  }
+  .arp {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
   }
   .opening {
     border-style: dashed;
@@ -152,6 +164,11 @@
   }
   .bad {
     background: var(--bad);
+  }
+  .wait {
+    background: white;
+    border: 2px solid var(--c-arp);
+    font-size: 12px;
   }
   .good {
     background: var(--good);

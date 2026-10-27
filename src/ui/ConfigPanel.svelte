@@ -4,6 +4,7 @@
   import { forwardKey } from '../engine/routes';
   import { routeRows, staticKey } from '../engine/routes';
   import { warningsFor } from '../engine/validate';
+  import Chip from './Chip.svelte';
   import Field from './Field.svelte';
   import TrashButton from './TrashButton.svelte';
   import { parseIpField, parseMaskField, parsePortField } from './fields';
@@ -340,6 +341,24 @@
       {/if}
 
       {#if device.kind !== 'switch'}
+        {@const arpRows = player.arpTables[device.id] ?? []}
+        <fieldset>
+          <legend>ARP table</legend>
+          <p class="hint">Which MAC address belongs to which IP address on the local network. Filled in by asking (ARP).</p>
+          <ul class="arp-rows">
+            {#each arpRows as row (row.ip)}
+              <li><Chip kind="ip" value={row.ip} /> <span class="arrow">→</span> <Chip kind="mac" value={row.mac} /></li>
+            {:else}
+              <li class="hint">Empty: it has not needed anyone's MAC address yet.</li>
+            {/each}
+          </ul>
+          {#if arpRows.length > 0}
+            <button onclick={() => player.edit(device.id, (d) => d.kind !== 'switch' && delete d.arpTable)}>Forget ARP table</button>
+          {/if}
+        </fieldset>
+      {/if}
+
+      {#if device.kind !== 'switch'}
         {#if player.showHints}
           {#if warnings.length > 0}
             <ul class="warnings" aria-label="Hints">
@@ -498,5 +517,18 @@
     margin: 0;
     color: var(--good);
     font-size: 0.9rem;
+  }
+  .arp-rows {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .arp-rows li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 </style>

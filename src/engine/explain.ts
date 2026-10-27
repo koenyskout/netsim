@@ -37,7 +37,11 @@ export const DROP_TEXT: Record<DropReason, DropText> = {
   },
   'no-arp-reply': {
     title: 'Nobody has that address here',
-    text: 'The sender looked for the next hop on its local network, but no device there has that IP address. A wrong subnet mask or wrong address is the usual cause.',
+    text: 'The sender asked its local network for the MAC address of the next hop (ARP), but nobody answered: no device on this network has that IP address. A wrong subnet mask or a wrong address is the usual cause.',
+  },
+  'arp-not-me': {
+    title: 'Not my address',
+    text: 'The ARP question asks for a different IP address, so this device ignores it. This is normal.',
   },
   'port-closed': {
     title: 'Port closed',
@@ -94,8 +98,21 @@ export const captions = {
     `The network layer adds the IP addresses (${src} → ${dst}), which identify the sender and the final destination.`,
   link: (src: string, dst: string) =>
     `The link layer adds the MAC addresses (${src} → ${dst}) for the next hop on this local network.`,
-  arp: (device: string, ip: string, mac: string) =>
-    `${device} finds that ${ip} has MAC address ${mac} on its local network.`,
+  arpHit: (device: string, ip: string, mac: string) =>
+    `${device} needs the MAC address of ${ip}. Its ARP table already has it: ${mac}.`,
+  arpMiss: (device: string, ip: string) =>
+    `${device} needs the MAC address of ${ip}, but it is not in its ARP table. The message waits while ${device} asks (ARP).`,
+  arpAsk: (device: string, ip: string) => `${device} asks everyone on its network: "Who has ${ip}?"`,
+  arpBroadcast: () =>
+    'The question goes to the broadcast MAC address FF:FF:FF:FF:FF:FF, so every device on this network receives it.',
+  arpAnswer: (device: string, ip: string, mac: string) => `${device} has ${ip}, so it answers: "${ip} is at ${mac}."`,
+  arpUnicast: (mac: string) => `The answer goes straight back to the one who asked, ${mac}.`,
+  arpNoteAsker: (device: string, ip: string, mac: string) =>
+    `${device} also writes down who asked: ${ip} is at ${mac}. It will need that to answer.`,
+  arpLearn: (device: string, ip: string, mac: string) =>
+    `${device} writes the answer in its ARP table (${ip} → ${mac}) and sends the waiting message.`,
+  arpOpen: (device: string) => `${device} opens the frame and finds an ARP message inside.`,
+  arpUpdate: (device: string, ip: string, mac: string) => `${device} writes the answer in its ARP table: ${ip} → ${mac}.`,
   transmit: (from: string, to: string) => `The frame travels over the cable from ${from} to ${to}.`,
   open: (device: string, layer: Layer, kind: 'host' | 'switch' | 'router') => {
     if (kind === 'switch')

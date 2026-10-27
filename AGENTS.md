@@ -4,7 +4,7 @@ NetSim is a teaching tool for an **introductory** networking course. It is used 
 
 ## Ground rules
 
-- **Clarity beats protocol fidelity.** Every feature must serve one of the concepts in PLAN.md: MAC, IP, ports, switches, routing, NAT, and optionally DHCP and DNS. TCP details, ICMP, TTL, VLANs and IPv6 are out of scope on purpose. ARP is hidden.
+- **Clarity beats protocol fidelity.** Every feature must serve one of the concepts in PLAN.md: MAC, IP, ports, switches, routing, NAT, and optionally DHCP and DNS. TCP details, ICMP, TTL, VLANs and IPv6 are out of scope on purpose. ARP is shown (it explains where the next MAC address comes from).
 - **The projector is the main screen.** Check layout changes at 1280×800. Text on the stage must stay readable from the back of a room, and the network picture gets as much space as possible.
 - **English only**, in plain language for beginners. Captions explain *why*, not just *what*.
 - **No backend.** This is a static site deployed to GitHub Pages, with a relative `base` in `vite.config.ts`.
@@ -19,7 +19,7 @@ src/ui/        Svelte 5 components (runes) and the reactive Player
 tests/         Vitest, engine and scenarios only
 ```
 
-- **`simulate(topology, action)` is a pure function.** It returns a `SimResult`: a list of events and the topology with its learned state (MAC tables, NAT table, DHCP leases). It never mutates its input.
+- **`simulate(topology, action)` is a pure function.** It returns a `SimResult`: a list of events and the topology with its learned state (MAC tables, ARP tables, NAT table, DHCP leases). It never mutates its input.
 - **The UI replays the events.** `Player` (`src/ui/player.svelte.ts`) holds a cursor `position` into the event list, so stepping backwards is just moving the cursor. `sceneAt(events, position)` (`src/ui/scene.ts`) derives what is on screen. Timeline-dependent state, such as the MAC and NAT tables at a given step, comes from `Timeline` (`src/engine/timeline.ts`).
 - **Captions and drop reasons** are in `src/engine/explain.ts`. When you add a new way for a packet to be dropped, add an explanation for it there.
 - **Scenarios are data.** Each one is scene JSON (`format: "netsim/1"`) plus a `scenario` block. The file name is the id and the short link (`#name`). The `expect` field of each suggestion is checked by `tests/presets.test.ts`.

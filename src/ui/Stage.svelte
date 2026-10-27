@@ -1,6 +1,7 @@
 <script lang="ts">
   import { STAGE } from '../presets/types';
   import { warningsFor } from '../engine/validate';
+  import { arpKey } from '../engine/routes';
   import DeviceNode from './DeviceNode.svelte';
   import type { Player } from './player.svelte';
   import Token from './Token.svelte';
@@ -47,10 +48,23 @@
   function highlightFor(deviceId: string): string | null {
     if (!event || event.device !== deviceId) return null;
     if (event.kind === 'learn') return event.mac;
-    if (event.kind === 'lookup' && event.table !== 'arp') return event.row;
+    if (event.kind === 'lookup') return event.row;
+    if (event.kind === 'arp-learn') return arpKey(event.ip);
     if (event.kind === 'nat') return event.row;
     if (event.kind === 'deliver') return String(event.port);
     return null;
+  }
+
+  /**
+   * A device's ARP table, when worth showing. A router has room for it on top of its other tables
+   * once it has something in it. Computers are packed closer, so theirs only pops up while in use.
+   */
+  function arpTableFor(deviceId: string) {
+    const rows = player.arpTables[deviceId];
+    if (!rows) return undefined;
+    const inUse = event?.device === deviceId && ((event.kind === 'lookup' && event.table === 'arp') || event.kind === 'arp-learn');
+    if (inUse) return rows;
+    return player.topology.devices[deviceId]?.kind === 'router' && rows.length > 0 ? rows : undefined;
   }
 
   function isLit(a: { device: string; iface: string }, b: { device: string; iface: string }): boolean {
@@ -147,6 +161,7 @@
         highlight={highlightFor(device.id)}
         macTable={player.macTables[device.id]}
         natTable={player.natTables[device.id]}
+        arpTable={arpTableFor(device.id)}
         selected={player.selected === device.id}
         warn={player.showHints && warningsFor(player.topology, device.id).length > 0}
         onselect={() => clicked(device.id)}
@@ -160,7 +175,8 @@
     {#each scene.tokens as token (token.pid)}
       {@const at = positions[token.device]}
       {@const from = token.spawnFrom ? positions[token.spawnFrom] : undefined}
-      <Token {token} x={at.x} y={at.y} spawn={from} />
+      <!-- A packet waiting for an ARP answer steps aside, so the question can leave from the card. -->
+      <Token {token} x={at.x + (token.waiting ? -46 : 0)} y={at.y + (token.waiting ? -46 : 0)} spawn={from} />
     {/each}
   </div>
 </div>

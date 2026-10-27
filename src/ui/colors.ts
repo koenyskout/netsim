@@ -15,6 +15,9 @@ export const LAYER_META: Record<Layer, LayerMeta> = {
   link: { name: 'Link', purpose: 'next device on this network (MAC)', color: 'var(--c-link)' },
 };
 
+/** An ARP message sits where the application message would be. */
+export const ARP_META: LayerMeta = { name: 'ARP', purpose: 'which MAC belongs to this IP?', color: 'var(--c-arp)' };
+
 /** Which layers each kind of device works at. */
 export const DEVICE_LAYERS: Record<'host' | 'switch' | 'router', readonly Layer[]> = {
   host: ['application', 'transport', 'network', 'link'],

@@ -21,13 +21,26 @@ describe('hosts on a switch', () => {
     expect(deliver).toMatchObject({ device: 'h2', app: 'Web', port: 80 });
   });
 
-  it('floods when the destination is unknown, and only the destination accepts', () => {
+  it('floods the ARP question, and only the host that is asked answers', () => {
     const r = simulate(oneSwitch(), send('h1', '10.0.0.2', 80));
     const floods = r.events.filter((e) => e.kind === 'flood');
-    expect(floods).toHaveLength(1); // the reply is forwarded directly: sw has learned h1
+    expect(floods).toHaveLength(1); // after the ARP exchange the switch knows both hosts
+    expect(floods[0].packet.service).toBe('arp');
     const ignored = r.events.filter((e) => e.kind === 'drop' && e.device === 'h3');
     expect(ignored).toHaveLength(1);
-    expect(ignored[0]).toMatchObject({ reason: 'wrong-mac', significant: false });
+    expect(ignored[0]).toMatchObject({ reason: 'arp-not-me', significant: false });
+  });
+
+  it('floods a frame for a MAC address the switch has not seen yet', () => {
+    const first = simulate(oneSwitch(), send('h1', '10.0.0.2', 80));
+    // h1 still knows h2's MAC, but the switch has forgotten where it is.
+    const topo = structuredClone(first.topology);
+    if (topo.devices.sw.kind === 'switch') topo.devices.sw.macTable = [];
+    const r = simulate(topo, send('h1', '10.0.0.2', 80));
+    const flood = r.events.find((e) => e.kind === 'flood');
+    expect(flood?.packet.service).toBeUndefined();
+    const ignored = r.events.find((e) => e.kind === 'drop' && e.device === 'h3');
+    expect(ignored).toMatchObject({ reason: 'wrong-mac', significant: false });
   });
 
   it('remembers learned MAC addresses between runs', () => {
@@ -83,7 +96,7 @@ describe('packet identity', () => {
 
   it('keeps one id for a packet that is forwarded, and a new id for the reply', () => {
     const r = simulate(twoNetworks(), send('h1', '10.0.1.2', 80));
-    const request = r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply);
+    const request = r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply && !e.packet.service);
     expect(new Set(request.map((e) => e.pid)).size).toBe(1);
     const reply = r.events.find((e) => e.kind === 'create' && e.packet.isReply)!;
     expect(reply.pid).not.toBe(request[0].pid);
@@ -95,7 +108,7 @@ describe('packet identity', () => {
     const [first, second] = r.events.filter(
       (e): e is Extract<SimEvent, { kind: 'rewrite' }> => e.kind === 'rewrite' && !e.packet.isReply,
     );
-    const firstHop = r.events.find((e): e is Extract<SimEvent, { kind: 'transmit' }> => e.kind === 'transmit')!;
+    const firstHop = r.events.find((e): e is Extract<SimEvent, { kind: 'transmit' }> => e.kind === 'transmit' && !e.packet.service)!;
     const before = firstHop.packet;
     const afterFirst = header(first.packet, 'link')!;
     const afterSecond = header(second.packet, 'link')!;
@@ -117,7 +130,7 @@ describe('routing between two networks', () => {
   it('keeps the IPs and changes the MACs at the router', () => {
     const topo = twoNetworks();
     const r = simulate(topo, send('h1', '10.0.1.2', 80));
-    const hops = r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply);
+    const hops = r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply && !e.packet.service);
     expect(hops).toHaveLength(2);
     const [first, second] = hops.map((e) => (e.kind === 'transmit' ? e.packet : null)!);
     expect(header(first, 'network')).toEqual(header(second, 'network'));
@@ -180,7 +193,7 @@ describe('routing between two networks', () => {
     it('forwards over several hops and back', () => {
       const r = simulate(threeHops(true), send('h1', '10.0.1.2', 80));
       expect(r.outcome).toMatchObject({ delivered: true, replyDelivered: true });
-      expect(r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply)).toHaveLength(3);
+      expect(r.events.filter((e) => e.kind === 'transmit' && !e.packet.isReply && !e.packet.service)).toHaveLength(3);
     });
 
     it('delivers the message but loses the reply if the way back is unknown', () => {
@@ -192,5 +205,54 @@ describe('routing between two networks', () => {
         replyDevice: 'r2',
       });
     });
+  });
+});
+
+describe('ARP', () => {
+  const arpEvents = (r: ReturnType<typeof simulate>) =>
+    r.events.filter((e): e is Extract<SimEvent, { kind: 'create' }> => e.kind === 'create' && e.packet.service === 'arp');
+
+  it('asks with a broadcast and gets a direct answer', () => {
+    const topo = oneSwitch();
+    const r = simulate(topo, send('h1', '10.0.0.2', 80));
+    const [ask, answer] = arpEvents(r);
+    expect(ask).toMatchObject({ device: 'h1', packet: { arp: { op: 'request', targetIp: '10.0.0.2' } } });
+    expect(answer).toMatchObject({ device: 'h2', packet: { arp: { op: 'reply', senderIp: '10.0.0.2' } } });
+    const frames = r.events
+      .filter((e): e is Extract<SimEvent, { kind: 'add-layer' }> => e.kind === 'add-layer' && e.packet.service === 'arp')
+      .map((e) => header(e.packet, 'link')!.dstMac);
+    expect(frames).toEqual(['FF:FF:FF:FF:FF:FF', topo.devices.h1.interfaces[0].mac]);
+  });
+
+  it('lets both sides remember, so the reply needs no ARP', () => {
+    const r = simulate(oneSwitch(), send('h1', '10.0.0.2', 80));
+    expect(arpEvents(r)).toHaveLength(2);
+    const learned = r.events.filter((e) => e.kind === 'arp-learn').map((e) => e.device);
+    expect(learned).toEqual(['h2', 'h1']);
+    const replyLookup = r.events.find((e) => e.kind === 'lookup' && e.table === 'arp' && e.device === 'h2');
+    expect(replyLookup).toMatchObject({ result: expect.any(String) });
+  });
+
+  it('remembers ARP answers between runs', () => {
+    const first = simulate(oneSwitch(), send('h1', '10.0.0.2', 80));
+    const second = simulate(first.topology, send('h1', '10.0.0.2', 80));
+    expect(arpEvents(second)).toHaveLength(0);
+    expect(second.outcome).toMatchObject({ delivered: true });
+  });
+
+  it('asks for the gateway, not for the final destination', () => {
+    const r = simulate(twoNetworks(), send('h1', '10.0.1.2', 80));
+    const asks = arpEvents(r).filter((e) => e.packet.arp?.op === 'request');
+    expect(asks.map((e) => [e.device, e.packet.arp?.targetIp])).toEqual([
+      ['h1', '10.0.0.1'],
+      ['r1', '10.0.1.2'],
+    ]);
+  });
+
+  it('gives up when nobody answers', () => {
+    const r = simulate(oneSwitch(), send('h1', '10.0.0.99', 80));
+    expect(arpEvents(r)).toHaveLength(1);
+    const drop = r.events.find((e) => e.kind === 'drop' && e.reason === 'no-arp-reply');
+    expect(drop).toMatchObject({ device: 'h1', pid: r.events[0].pid, significant: true });
   });
 });

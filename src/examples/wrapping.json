@@ -5,7 +5,7 @@
     "group": "tour",
     "order": 1,
     "description": "Two computers connected by one cable. Watch the message get wrapped in layers on the way out and unwrapped on arrival.",
-    "goal": "Each layer adds its own envelope: ports (transport), IP addresses (network), MAC addresses (link). The receiver peels them off in reverse order.",
+    "goal": "Each layer adds its own envelope: ports (transport), IP addresses (network), MAC addresses (link). The receiver peels them off in reverse order. To fill in the MAC addresses, Alice first asks for Bob's (ARP): scenario 2 shows that in detail.",
     "suggestions": [
       {
         "label": "Alice says hello to Bob",

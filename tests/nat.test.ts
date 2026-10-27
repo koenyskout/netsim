@@ -18,7 +18,7 @@ describe('NAT: inside to outside', () => {
   it('delivers, and the server only ever sees the public address', () => {
     const r = simulate(homeNat(), send('pc1', '203.0.113.80', 80));
     expect(r.outcome).toMatchObject({ delivered: true, replyDelivered: true });
-    const arrival = r.events.find((e) => e.kind === 'transmit' && e.to.device === 'net' && !e.packet.isReply && e.device === 'home');
+    const arrival = r.events.find((e) => e.kind === 'transmit' && e.to.device === 'net' && !e.packet.isReply && !e.packet.service && e.device === 'home');
     const net = header(arrival!.kind === 'transmit' ? arrival!.packet : r.events[0].kind === 'create' ? r.events[0].packet : { headers: [], message: '' }, 'network');
     expect(net).toMatchObject({ srcIp: '203.0.113.2', dstIp: '203.0.113.80' });
   });

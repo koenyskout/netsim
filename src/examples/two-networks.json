@@ -5,7 +5,7 @@
     "group": "tour",
     "order": 4,
     "description": "Two separate networks joined by a router. PC1 and the Server are on different networks, so the message has to go through the router.",
-    "goal": "Watch the IP addresses: they never change. Watch the MAC addresses: they change at the router. Click a device to see and change its settings.",
+    "goal": "Watch the IP addresses: they never change. Watch the MAC addresses: they change at the router. PC1 asks (ARP) for the MAC address of its gateway, not of the Server. Click a device to see and change its settings.",
     "suggestions": [
       {
         "label": "PC1 → PC2 (same network)",

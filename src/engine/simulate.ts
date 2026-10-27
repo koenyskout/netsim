@@ -1,8 +1,8 @@
 import { sameNetwork, networkLabel, parseIp, networkAddress, formatIp } from './addressing';
 import { captions } from './explain';
 import type { Outcome, SimEvent, SimResult } from './events';
-import { getInterface, peerOf, resolveMac } from './graph';
-import { connectedKey, forwardKey, natKey, staticKey } from './routes';
+import { getInterface, peerOf } from './graph';
+import { arpKey, connectedKey, forwardKey, natKey, staticKey } from './routes';
 import {
   BROADCAST_MAC,
   INSIGNIFICANT_DROPS,
@@ -10,9 +10,12 @@ import {
   header,
   type Action,
   type App,
+  type ArpEntry,
   type DropReason,
   type Header,
   type Host,
+  type Interface,
+  type LinkHeader,
   type MacEntry,
   type NatEntry,
   type Packet,
@@ -22,7 +25,7 @@ import {
   type Topology,
 } from './model';
 
-const MAX_TRANSMITS = 64;
+const MAX_TRANSMITS = 200;
 const DEFAULT_SRC_PORT = 49152;
 const DNS_PORT = 53;
 const DNS_CLIENT_PORT = 53000;
@@ -36,6 +39,16 @@ interface Pending {
   pid: number;
 }
 
+/** A packet waiting at a device for an ARP answer. */
+interface Held {
+  device: string;
+  ip: string;
+  pid: number;
+  packet: Packet;
+  /** Finishes sending once the MAC address is known. */
+  resume: (mac: string) => void;
+}
+
 interface Ctx {
   topo: Topology;
   events: SimEvent[];
@@ -46,6 +59,8 @@ interface Ctx {
   sockets: Map<string, string>;
   /** Messages waiting for a DNS answer, by the asking host and port. */
   waiting: Map<string, Outgoing>;
+  /** Packets waiting for an ARP answer. */
+  held: Held[];
 }
 
 /**
@@ -55,11 +70,13 @@ interface Ctx {
  */
 export function simulate(before: Topology, action: Action): SimResult {
   const topo = structuredClone(before);
-  const ctx: Ctx = { topo, events: [], queue: [], transmits: 0, nextPid: 1, sockets: new Map(), waiting: new Map() };
+  const ctx: Ctx = { topo, events: [], queue: [], transmits: 0, nextPid: 1, sockets: new Map(), waiting: new Map(), held: [] };
 
   const initialMacTables: Record<string, MacEntry[]> = {};
+  const initialArpTables: Record<string, ArpEntry[]> = {};
   for (const d of Object.values(before.devices)) {
     if (d.kind === 'switch') initialMacTables[d.id] = structuredClone(d.macTable);
+    else initialArpTables[d.id] = structuredClone(d.arpTable ?? []);
   }
 
   const sender = topo.devices[action.from];
@@ -80,6 +97,8 @@ export function simulate(before: Topology, action: Action): SimResult {
   }
 
   while (ctx.queue.length > 0) receive(ctx, ctx.queue.shift()!);
+  // Whatever still waits for an ARP answer never got one.
+  for (const h of ctx.held) drop(ctx, h.device, 'no-arp-reply', h.packet, h.pid);
 
   const initialNatTables: Record<string, NatEntry[]> = {};
   for (const d of Object.values(before.devices)) {
@@ -91,6 +110,7 @@ export function simulate(before: Topology, action: Action): SimResult {
     topology: topo,
     initialMacTables,
     initialNatTables,
+    initialArpTables,
     outcome: action.type === 'dhcp' ? dhcpOutcome(ctx.events, sender.id) : outcomeOf(ctx.events),
   };
 }
@@ -240,35 +260,109 @@ function sendFromHost(ctx: Ctx, host: Host, out: Outgoing): void {
     caption: captions.network(srcIp, out.dstIp),
   });
 
-  if (!peerOf(ctx.topo, host.id, egress.id)) return drop(ctx, host.id, 'no-link', packet, pid);
-  let dstMac = out.dstMac;
-  if (!dstMac) {
-    const found = resolveMac(ctx.topo, host.id, egress.id, nextHop);
-    if (!found) return drop(ctx, host.id, 'no-arp-reply', packet, pid);
-    dstMac = found;
+  const via = egress;
+  if (!peerOf(ctx.topo, host.id, via.id)) return drop(ctx, host.id, 'no-link', packet, pid);
+  const finish = (dstMac: string) => {
+    const framed = withLink(packet, via.mac, dstMac);
     ctx.events.push({
-      kind: 'lookup',
+      kind: 'add-layer',
       device: host.id,
       pid,
-      table: 'arp',
-      key: nextHop,
-      result: dstMac,
-      row: nextHop,
-      packet,
-      caption: captions.arp(host.name, nextHop, dstMac),
+      layer: 'link',
+      packet: framed,
+      caption: captions.link(via.mac, dstMac),
     });
-  }
+    transmit(ctx, host.id, via.id, framed, pid);
+  };
+  if (out.dstMac) return finish(out.dstMac);
+  needMac(ctx, host, via, nextHop, pid, packet, finish);
+}
 
-  packet = withLink(packet, egress.mac, dstMac);
+// ---- ARP ----
+
+/** Find the MAC address for `ip` in the ARP table, or hold the packet and ask the network. */
+function needMac(
+  ctx: Ctx,
+  device: Host | Router,
+  iface: Interface,
+  ip: string,
+  pid: number,
+  packet: Packet,
+  resume: (mac: string) => void,
+): void {
+  const known = (device.arpTable ?? []).find((e) => e.ip === ip);
   ctx.events.push({
-    kind: 'add-layer',
-    device: host.id,
+    kind: 'lookup',
+    device: device.id,
     pid,
-    layer: 'link',
+    table: 'arp',
+    key: ip,
+    result: known?.mac ?? null,
+    row: known ? arpKey(ip) : null,
     packet,
-    caption: captions.link(egress.mac, dstMac),
+    caption: known ? captions.arpHit(device.name, ip, known.mac) : captions.arpMiss(device.name, ip),
   });
-  transmit(ctx, host.id, egress.id, packet, pid);
+  if (known) return resume(known.mac);
+  const asking = ctx.held.some((h) => h.device === device.id && h.ip === ip);
+  ctx.held.push({ device: device.id, ip, pid, packet, resume });
+  if (!asking) askArp(ctx, device, iface, ip);
+}
+
+function askArp(ctx: Ctx, device: Host | Router, iface: Interface, ip: string): void {
+  const pid = ctx.nextPid++;
+  const question: Packet = {
+    headers: [],
+    message: `Who has ${ip}? Tell ${iface.ip}`,
+    service: 'arp',
+    arp: { op: 'request', senderIp: iface.ip!, senderMac: iface.mac, targetIp: ip },
+  };
+  ctx.events.push({ kind: 'create', device: device.id, pid, app: 'ARP', packet: question, caption: captions.arpAsk(device.name, ip) });
+  const framed = withLink(question, iface.mac, BROADCAST_MAC);
+  ctx.events.push({ kind: 'add-layer', device: device.id, pid, layer: 'link', packet: framed, caption: captions.arpBroadcast() });
+  transmit(ctx, device.id, iface.id, framed, pid);
+}
+
+/** Write an ARP answer into the device's table. */
+function rememberArp(ctx: Ctx, device: Host | Router, ip: string, mac: string, pid: number, caption: string): void {
+  const table = (device.arpTable ??= []);
+  const existing = table.find((e) => e.ip === ip);
+  if (existing) existing.mac = mac;
+  else table.push({ ip, mac });
+  ctx.events.push({ kind: 'arp-learn', device: device.id, pid, ip, mac, arpTable: structuredClone(table), caption });
+}
+
+/** An ARP question or answer arrives at a host or router (its link header is already checked). */
+function receiveArp(ctx: Ctx, device: Host | Router, p: Pending): void {
+  const iface = getInterface(device, p.iface);
+  const msg = p.packet.arp!;
+  if (msg.op === 'request') {
+    if (iface.ip !== msg.targetIp) return drop(ctx, device.id, 'arp-not-me', p.packet, p.pid);
+    rememberArp(ctx, device, msg.senderIp, msg.senderMac, p.pid, captions.arpNoteAsker(device.name, msg.senderIp, msg.senderMac));
+    const pid = ctx.nextPid++;
+    const answer: Packet = {
+      headers: [],
+      message: `${iface.ip} is at ${iface.mac}`,
+      service: 'arp',
+      arp: { op: 'reply', senderIp: iface.ip, senderMac: iface.mac, targetIp: msg.senderIp },
+    };
+    ctx.events.push({ kind: 'create', device: device.id, pid, app: 'ARP', packet: answer, caption: captions.arpAnswer(device.name, iface.ip, iface.mac) });
+    const framed = withLink(answer, iface.mac, msg.senderMac);
+    ctx.events.push({ kind: 'add-layer', device: device.id, pid, layer: 'link', packet: framed, caption: captions.arpUnicast(msg.senderMac) });
+    return transmit(ctx, device.id, iface.id, framed, pid);
+  }
+  const waiting = ctx.held.filter((h) => h.device === device.id && h.ip === msg.senderIp);
+  ctx.held = ctx.held.filter((h) => !waiting.includes(h));
+  rememberArp(
+    ctx,
+    device,
+    msg.senderIp,
+    msg.senderMac,
+    p.pid,
+    waiting.length > 0
+      ? captions.arpLearn(device.name, msg.senderIp, msg.senderMac)
+      : captions.arpUpdate(device.name, msg.senderIp, msg.senderMac),
+  );
+  for (const h of waiting) h.resume(msg.senderMac);
 }
 
 // ---- receiving ----
@@ -288,7 +382,7 @@ function openLink(ctx: Ctx, p: Pending) {
     pid: p.pid,
     layer: 'link',
     packet: p.packet,
-    caption: captions.open(device.name, 'link', device.kind),
+    caption: p.packet.service === 'arp' && device.kind !== 'switch' ? captions.arpOpen(device.name) : captions.open(device.name, 'link', device.kind),
   });
   return header(p.packet, 'link')!;
 }
@@ -354,6 +448,7 @@ function receiveHost(ctx: Ctx, host: Host, p: Pending): void {
   if (link.dstMac !== iface.mac && link.dstMac !== BROADCAST_MAC) {
     return drop(ctx, host.id, 'wrong-mac', p.packet, pid);
   }
+  if (p.packet.service === 'arp') return receiveArp(ctx, host, p);
 
   let packet = strip(p.packet);
   ctx.events.push({
@@ -478,6 +573,7 @@ function receiveRouter(ctx: Ctx, router: Router, p: Pending): void {
   if (link.dstMac !== inIface.mac && link.dstMac !== BROADCAST_MAC) {
     return drop(ctx, router.id, 'wrong-mac', p.packet, pid);
   }
+  if (p.packet.service === 'arp') return receiveArp(ctx, router, p);
 
   let packet = strip(p.packet);
   ctx.events.push({
@@ -535,10 +631,12 @@ function receiveRouter(ctx: Ctx, router: Router, p: Pending): void {
     if (!translated) return;
     packet = translated;
   }
-  const dstMac = resolveMac(ctx.topo, router.id, out.id, match.nextHop);
-  if (!dstMac) return drop(ctx, router.id, 'no-arp-reply', packet, pid);
+  const ready = packet;
+  needMac(ctx, router, out, match.nextHop, pid, packet, (dstMac) => forward(ctx, router, out, link, ready, pid, dstMac));
+}
 
-  // Rebuild the link layer for the next network: new MAC addresses, same IPs.
+/** Rebuild the link layer for the next network: new MAC addresses, same IPs. */
+function forward(ctx: Ctx, router: Router, out: Interface, link: LinkHeader, packet: Packet, pid: number, dstMac: string): void {
   const rewritten = withLink(packet, out.mac, dstMac);
   ctx.events.push({
     kind: 'rewrite',

@@ -98,7 +98,9 @@ describe('sharing', () => {
     const p = presets.find((x) => x.id === 'nat')!;
     const action = p.suggestions[0].action;
     const run = simulate(p.topology, action);
-    const parsed = parseScene(exportScene({ topology: run.topology, positions: p.positions }));
+    const text = exportScene({ topology: run.topology, positions: p.positions });
+    expect(text).not.toContain('arpTable');
+    const parsed = parseScene(text);
     expect(parsed.ok && parsed.scene.topology).toEqual(p.topology);
   });
 

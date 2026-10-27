@@ -5,7 +5,7 @@
     "group": "tour",
     "order": 2,
     "description": "Three computers on one switch. The switch starts out knowing nothing; it learns which MAC address is behind which port.",
-    "goal": "An unknown destination makes the switch flood the frame out of every other port. Once it has learned, it forwards only to the right port. The switch only ever looks at the link layer.",
+    "goal": "PC1 knows PC2's IP address but not its MAC address, so it first asks everyone (ARP). That question is a broadcast, and the switch floods it out of every other port. Meanwhile the switch learns which MAC address is behind which port, so the message itself goes only to the right port. The switch only ever looks at the link layer.",
     "suggestions": [
       {
         "label": "PC1 → PC2 (first time)",

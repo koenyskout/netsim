@@ -1,4 +1,4 @@
-import type { DropReason, Layer, MacEntry, NatEntry, Packet } from './model';
+import type { ArpEntry, DropReason, Layer, MacEntry, NatEntry, Packet } from './model';
 
 /**
  * The simulation produces a flat list of events. The UI replays them; going
@@ -28,6 +28,8 @@ export type SimEvent =
       packet: Packet;
     })
   | (Base & { kind: 'learn'; mac: string; port: string; macTable: MacEntry[] })
+  /** A host or router writes an ARP answer into its ARP table. */
+  | (Base & { kind: 'arp-learn'; ip: string; mac: string; arpTable: ArpEntry[] })
   | (Base & {
       kind: 'rewrite';
       layer: Layer;
@@ -97,5 +99,7 @@ export interface SimResult {
   initialMacTables: Record<string, MacEntry[]>;
   /** NAT tables before the run. */
   initialNatTables: Record<string, NatEntry[]>;
+  /** ARP tables of hosts and routers before the run. */
+  initialArpTables: Record<string, ArpEntry[]>;
   outcome: Outcome;
 }

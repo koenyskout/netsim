@@ -12,6 +12,7 @@ A visual, step-by-step network simulator for an introductory networking course. 
 | IP | Identifies a device across networks; stays end to end | IP chips stay while MACs change |
 | Ports | Direct a packet to the right *application* on a host | Packet drops into the app that opened the port |
 | Switch | Learns which MAC is behind which port; floods when unsure | MAC table fills in; flood is visible |
+| ARP | Finds the MAC address for an IP on the local network | Broadcast question, direct answer, ARP table fills in |
 | Router | Picks the next hop by destination network | Matching route row lights up |
 | NAT | Many private devices share one public address; ports tell them apart | Source IP/port rewritten; table row links the reply back |
 | DHCP (optional) | A new device asks the network for its settings | Host config fills in |
@@ -29,7 +30,7 @@ A visual, step-by-step network simulator for an introductory networking course. 
 - TypeScript + Vite static site, no backend. UI tech free (leaning Svelte; plain TS also fine).
 - Deployed to GitHub Pages via GitHub Actions (user has a GitHub organisation).
 - No recording of student results; forward/backward stepping replaces it.
-- ARP hidden by default (router "just knows" next-hop MAC; optional "show me how" reveal).
+- ARP is shown: a broadcast question ("Who has 10.0.0.1?"), a direct answer, and ARP tables on hosts and routers that persist between runs like MAC tables. The waiting message steps aside until the answer arrives. (Originally planned as hidden; shown since it answers "how does the router know the next MAC?")
 - DHCP simplified to two steps (ask by broadcast, get settings). Router doubles as DHCP server by default.
 - DNS: single flat server with a name table and a client cache.
 - Subnet masks shown with a plain network label plus CIDR; accept dotted-decimal or CIDR input.

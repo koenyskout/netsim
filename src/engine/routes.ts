@@ -15,6 +15,8 @@ export interface RouteRow {
 
 export const connectedKey = (iface: string) => `connected:${iface}`;
 export const staticKey = (network: string, prefix: number) => `route:${network}/${prefix}`;
+/** Row id of an ARP table entry. */
+export const arpKey = (ip: string) => `arp:${ip}`;
 
 /** The routing table as a student sees it: connected networks first, then static routes. */
 export function routeRows(router: Router): RouteRow[] {

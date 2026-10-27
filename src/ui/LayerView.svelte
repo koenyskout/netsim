@@ -11,13 +11,14 @@
 
   function what(e: SimEvent): string {
     switch (e.kind) {
-      case 'create': return 'writes the message';
+      case 'create': return e.packet.arp ? (e.packet.arp.op === 'request' ? 'asks for a MAC (ARP)' : 'answers with its MAC (ARP)') : 'writes the message';
       case 'add-layer': return 'adds its header';
       case 'open-layer': return 'opens its header';
       case 'lookup': return `looks up ${e.table === 'arp' ? 'the MAC' : e.table === 'mac' ? 'the port' : e.table === 'socket' ? 'the app' : e.table === 'route' ? 'the route' : e.table === 'nat' ? 'the NAT row' : e.table === 'dns' ? 'the name' : 'a free address'}`;
       case 'rewrite': return 'replaces the MAC addresses';
       case 'nat': return 'swaps address and port';
       case 'learn': return 'learns a MAC address';
+      case 'arp-learn': return 'notes IP → MAC';
       case 'flood': return 'sends it everywhere';
       case 'transmit': return 'sends it on the cable';
       case 'deliver': return 'hands it to the app';

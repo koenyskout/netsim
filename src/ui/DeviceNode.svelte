@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Device, Layer, MacEntry, NatEntry } from '../engine/model';
-  import { forwardKey, natKey, routeRows } from '../engine/routes';
+  import type { ArpEntry, Device, Layer, MacEntry, NatEntry } from '../engine/model';
+  import { arpKey, forwardKey, natKey, routeRows } from '../engine/routes';
   import Chip from './Chip.svelte';
 
   let {
@@ -11,6 +11,7 @@
     highlight,
     macTable,
     natTable,
+    arpTable,
     selected,
     warn,
     onselect,
@@ -28,6 +29,8 @@
     highlight: string | null;
     macTable?: MacEntry[];
     natTable?: NatEntry[];
+    /** Left out when there is nothing worth showing. */
+    arpTable?: ArpEntry[];
     selected: boolean;
     /** True if the configuration has something worth a hint. */
     warn: boolean;
@@ -42,7 +45,20 @@
   } = $props();
 </script>
 
-<div class="node" style="left:{x}px; top:{y}px">
+{#snippet arpBox(rows: ArpEntry[])}
+  <div class="table arp">
+    <div class="table-title">ARP table</div>
+    {#each rows as row (row.ip)}
+      <div class="row" class:hl={highlight === arpKey(row.ip)}>
+        <Chip kind="ip" value={row.ip} /> <span class="arrow">→</span> <Chip kind="mac" value={row.mac} short />
+      </div>
+    {:else}
+      <div class="empty">empty: no MACs known</div>
+    {/each}
+  </div>
+{/snippet}
+
+<div class="node" class:popup={device.kind === 'host' && arpTable} style="left:{x}px; top:{y}px">
   <button
     class="icon {device.kind}"
     class:busy={activeLayer !== null}
@@ -105,10 +121,12 @@
         {/each}
       </div>
     {/if}
+    {#if device.kind === 'host' && arpTable}{@render arpBox(arpTable)}{/if}
   </div>
 
   {#if device.kind === 'router'}
     <div class="tables">
+    {#if arpTable}{@render arpBox(arpTable)}{/if}
     {#if device.nat}
       {@const publicIp = device.interfaces.find((i) => i.id === device.nat!.outside)?.ip}
       <div class="table nat">
@@ -168,6 +186,9 @@
     width: 0;
     height: 0;
     z-index: 2;
+  }
+  .popup {
+    z-index: 4;
   }
   .icon {
     padding: 0;
@@ -359,6 +380,17 @@
   }
   .arrow {
     color: var(--muted);
+  }
+  .arp {
+    border-color: var(--c-arp);
+  }
+  .arp .table-title {
+    color: var(--c-arp);
+  }
+  /* A computer's ARP table pops up over its neighbours while it is in use. */
+  .info .arp {
+    margin-top: 3px;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
   }
   .routes .net,
   .routes .via {

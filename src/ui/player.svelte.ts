@@ -1,6 +1,6 @@
 import type { SimResult } from '../engine/events';
 import { addDevice, connectDevices, freeSpot, removeDevice, removeLink, type NewKind, type Positions } from '../engine/edit';
-import type { Action, Device, MacEntry, NatEntry, Topology } from '../engine/model';
+import type { Action, ArpEntry, Device, MacEntry, NatEntry, Topology } from '../engine/model';
 import type { Scene } from '../engine/share';
 import { simulate } from '../engine/simulate';
 import { Timeline } from '../engine/timeline';
@@ -71,6 +71,19 @@ export class Player {
     return t.natTables();
   });
 
+  arpTables = $derived.by((): Record<string, ArpEntry[]> => {
+    if (!this.result) {
+      const tables: Record<string, ArpEntry[]> = {};
+      for (const d of Object.values(this.topology.devices)) {
+        if (d.kind !== 'switch') tables[d.id] = d.arpTable ?? [];
+      }
+      return tables;
+    }
+    const t = new Timeline(this.result);
+    t.seek(this.position);
+    return t.arpTables();
+  });
+
   constructor(preset: Preset) {
     this.loadPreset(preset);
   }
@@ -138,6 +151,7 @@ export class Player {
     const topology = structuredClone(this.topology);
     for (const d of Object.values(topology.devices)) {
       if (d.kind === 'switch') d.macTable = [];
+      else delete d.arpTable;
       if (d.kind === 'router' && d.nat) d.nat.table = [];
       if (d.kind === 'host' && d.dhcpServer) d.dhcpServer.leases = [];
     }

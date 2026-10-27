@@ -14,6 +14,8 @@ export interface Token {
   current: boolean;
   /** Layer being opened (peeled) by the current event. */
   opening?: Layer;
+  /** Parked on its device until an ARP answer arrives. */
+  waiting?: boolean;
 }
 
 export interface Scene {
@@ -36,10 +38,13 @@ const EVENT_LAYER: Record<string, Layer | undefined> = {
   nat: 'transport',
   configure: 'network',
   transmit: 'link',
+  'arp-learn': 'network',
 };
 
 export function layerOfEvent(e: SimEvent): Layer | null {
   if (e.kind === 'add-layer' || e.kind === 'open-layer') return e.layer;
+  // ARP works between the two: it finds the link address for a network address.
+  if (e.kind === 'create' && e.packet.service === 'arp') return 'network';
   if (e.kind === 'lookup') {
     return { arp: 'network', route: 'network', mac: 'link', socket: 'transport', nat: 'transport', dns: 'application', dhcp: 'application' }[e.table] as Layer;
   }
@@ -68,12 +73,14 @@ export function sceneAt(events: readonly SimEvent[], position: number): Scene {
       byPid.set(e.pid, t);
     }
     if ('packet' in e) t.packet = e.packet;
+    t.waiting = e.kind === 'lookup' && e.table === 'arp' && e.result === null;
     t.device = e.kind === 'transmit' ? e.to.device : e.device;
     if (e.kind === 'transmit' && e.copyOf !== undefined) {
       const original = byPid.get(e.copyOf);
       if (original) original.ended = true;
     }
-    if (e.kind === 'deliver') t.status = 'delivered';
+    // An ARP message has done its job once its answer is written down.
+    if (e.kind === 'deliver' || e.kind === 'arp-learn') t.status = 'delivered';
     if (e.kind === 'drop') {
       t.status = 'dropped';
       t.significantDrop = e.significant;
@@ -95,6 +102,7 @@ export function sceneAt(events: readonly SimEvent[], position: number): Scene {
       status: t.status,
       current: isCurrent,
       opening: isCurrent && current?.kind === 'open-layer' ? current.layer : undefined,
+      waiting: t.waiting && !isCurrent,
     });
   }
 
