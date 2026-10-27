@@ -16,10 +16,7 @@
     <button onclick={() => player.restart()} disabled={empty || player.atStart} title="Back to start (Home)" aria-label="Back to start">⏮</button>
     <button onclick={() => player.prevHop()} disabled={empty || player.atStart} title="Previous hop (Shift+←)" aria-label="Previous hop">⏪</button>
     <button onclick={() => player.prev()} disabled={empty || player.atStart} title="Step back (←)" aria-label="Step back">◀</button>
-    <button class="play" onclick={() => player.toggle()} disabled={empty} title="Play / pause (Space)" aria-label={player.playing ? 'Pause' : 'Play'}>
-      {player.playing ? '⏸' : '▶'}
-    </button>
-    <button onclick={() => player.next()} disabled={empty || player.atEnd} title="Step forward (→)" aria-label="Step forward">▶</button>
+    <button class="step" onclick={() => player.next()} disabled={empty || player.atEnd} title="Step forward (→ or Space)" aria-label="Step forward">▶</button>
     <button onclick={() => player.nextHop()} disabled={empty || player.atEnd} title="Next hop (Shift+→)" aria-label="Next hop">⏩</button>
   </div>
 
@@ -39,15 +36,6 @@
     <span class="count">{player.position} / {length}</span>
   </div>
 
-  <label class="speed">
-    Speed
-    <select value={String(player.speed)} onchange={(e) => player.setSpeed(Number(e.currentTarget.value))}>
-      <option value="0.5">0.5×</option>
-      <option value="1">1×</option>
-      <option value="2">2×</option>
-      <option value="3">3×</option>
-    </select>
-  </label>
 </div>
 
 <style>
@@ -77,7 +65,7 @@
     opacity: 0.4;
     cursor: default;
   }
-  .play {
+  .step {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
@@ -117,18 +105,5 @@
     color: var(--muted);
     width: 4.2rem;
     text-align: right;
-  }
-  .speed {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-  select {
-    padding: 0.3rem 0.4rem;
-    border: 2px solid var(--line);
-    border-radius: 8px;
-    background: var(--panel);
   }
 </style>

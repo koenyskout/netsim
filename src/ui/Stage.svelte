@@ -130,7 +130,7 @@
 <div class="area" bind:clientWidth={areaW} bind:clientHeight={areaH}>
   <div
     class="stage"
-    style="width:{STAGE.width}px; height:{STAGE.height}px; transform: scale({scale}); left:{offset.x}px; top:{offset.y}px; --dur:{Math.min(player.stepMs * 0.85, 1000)}ms"
+    style="width:{STAGE.width}px; height:{STAGE.height}px; transform: scale({scale}); left:{offset.x}px; top:{offset.y}px"
   >
     <svg class="cables" width={STAGE.width} height={STAGE.height} aria-hidden="true">
       {#each player.topology.links as link, i (link.a.device + link.a.iface + link.b.device + link.b.iface)}

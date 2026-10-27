@@ -7,17 +7,13 @@ import { Timeline } from '../engine/timeline';
 import type { Preset } from '../presets/types';
 import { sceneAt } from './scene';
 
-const BASE_STEP_MS = 900;
-
-/** Reactive state for the whole app: current preset, the last run, and playback. */
+/** Reactive state for the whole app: current preset, the last run, and the step cursor. */
 export class Player {
   preset = $state.raw<Preset>(undefined as unknown as Preset);
   /** The topology between runs (switches keep what they have learned). */
   topology = $state.raw<Topology>(undefined as unknown as Topology);
   result = $state.raw<SimResult | null>(null);
   position = $state(0);
-  playing = $state(false);
-  speed = $state(1);
   /** Device whose configuration is shown in the side panel. */
   selected = $state<string | null>(null);
   /** Which side panel tab is open. */
@@ -36,14 +32,10 @@ export class Player {
   /** Bumped when the topology is replaced wholesale, so edit forms can start over. */
   epoch = $state(0);
 
-  private timer: ReturnType<typeof setInterval> | undefined;
-
   events = $derived(this.result?.events ?? []);
   scene = $derived(sceneAt(this.events, this.position));
   atStart = $derived(this.position === 0);
   atEnd = $derived(this.position >= this.events.length);
-  /** Milliseconds per step; the canvas uses it to time movement. */
-  stepMs = $derived(BASE_STEP_MS / this.speed);
 
   macTables = $derived.by((): Record<string, MacEntry[]> => {
     if (!this.result) {
@@ -89,7 +81,6 @@ export class Player {
   }
 
   loadPreset(preset: Preset): void {
-    this.stop();
     this.preset = preset;
     this.topology = structuredClone(preset.topology);
     this.result = null;
@@ -133,7 +124,6 @@ export class Player {
 
   /** Change the shape of the network. Clears the run. */
   private restructure(change: (topology: Topology, positions: Positions) => void): void {
-    this.stop();
     this.adopt();
     const topology = structuredClone(this.topology);
     const positions = structuredClone(this.positions) as Positions;
@@ -232,7 +222,6 @@ export class Player {
 
   /** Change one device's configuration. Clears the current run, since it no longer applies. */
   edit(id: string, change: (device: Device) => void): void {
-    this.stop();
     const topology = structuredClone(this.topology);
     change(topology.devices[id]);
     this.topology = topology;
@@ -247,13 +236,11 @@ export class Player {
   }
 
   send(action: Action): void {
-    this.stop();
     const result = simulate(this.topology, action);
     this.result = result;
     this.topology = result.topology;
     this.position = 0;
     if (this.tab !== 'layers') this.tab = 'packet';
-    this.play();
   }
 
   private timeline(): Timeline | null {
@@ -264,15 +251,12 @@ export class Player {
   }
 
   next(): void {
-    this.stop();
-    this.advance();
+    this.position = Math.min(this.events.length, this.position + 1);
   }
   prev(): void {
-    this.stop();
     this.position = Math.max(0, this.position - 1);
   }
   nextHop(): void {
-    this.stop();
     const t = this.timeline();
     if (t) {
       t.nextHop();
@@ -280,7 +264,6 @@ export class Player {
     }
   }
   prevHop(): void {
-    this.stop();
     const t = this.timeline();
     if (t) {
       t.prevHop();
@@ -288,44 +271,9 @@ export class Player {
     }
   }
   seek(position: number): void {
-    this.stop();
     this.position = Math.max(0, Math.min(this.events.length, Math.trunc(position)));
   }
   restart(): void {
-    this.stop();
     this.position = 0;
-  }
-
-  toggle(): void {
-    if (this.playing) return this.stop();
-    if (this.events.length === 0) return;
-    if (this.atEnd) this.position = 0;
-    this.play();
-  }
-
-  setSpeed(speed: number): void {
-    this.speed = speed;
-    if (this.playing) this.play();
-  }
-
-  private advance(): boolean {
-    if (this.position >= this.events.length) return false;
-    this.position++;
-    return true;
-  }
-
-  private play(): void {
-    clearInterval(this.timer);
-    this.playing = true;
-    this.advance();
-    this.timer = setInterval(() => {
-      if (!this.advance() || this.atEnd) this.stop();
-    }, this.stepMs);
-  }
-
-  stop(): void {
-    clearInterval(this.timer);
-    this.timer = undefined;
-    this.playing = false;
   }
 }

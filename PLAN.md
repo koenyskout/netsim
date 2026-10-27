@@ -59,10 +59,10 @@ Link (MAC src/dst) > Network (IP src/dst) > Transport (ports) > Application (mes
 Toggle: sender and receiver as stacks side by side, intermediate devices as shorter stacks, peer layers linked by dotted lines. Driven by the same events as the network view.
 
 ### UI layout
-- Centre: topology canvas. Bottom: playback bar (back, play/pause, forward, scrubber with event ticks, speed) and a large caption line.
+- Centre: topology canvas. Bottom: step bar (back, forward, jump a hop, scrubber with event ticks; no autoplay: the lecturer sets the pace) and a large caption line.
 - Right: inspector (packet envelope or device config/tables). Left: device palette (edit mode) and preset picker.
 - **Lecture mode**: larger text/chips, hide editing chrome, high contrast.
-- Keyboard: arrows step, space play/pause.
+- Keyboard: arrows, Space and Page Up/Down (presenter clickers) step.
 
 ## Engine
 
@@ -120,7 +120,7 @@ netsim/
 │  ├─ ui/
 │  │  ├─ canvas/                   # SVG topology, packet card, animation
 │  │  ├─ panels/                   # inspector, config forms, preset picker
-│  │  ├─ timeline.ts               # cursor, play/pause, scrubber
+│  │  ├─ timeline.ts               # cursor and scrubber
 │  │  └─ layerview/                # add-on
 │  ├─ presets/*.json
 │  └─ main.ts

@@ -14,7 +14,7 @@ Students set up hosts (IP, mask, gateway), send a message and watch it travel ho
 - **Share links**: `#nat` opens a built-in scenario; **Share** creates a link or a file for any network, including your own.
 - **Present mode** (P) for large text at the back of the room.
 
-Keyboard: ← / → step, Shift+← / → jump a hop, Space play/pause, Home restart, P present, I side panel.
+Keyboard: ← / → (or Space, Page Up / Down for presenter clickers) step, Shift+← / → jump a hop, Home restart, P present, I side panel.
 
 ## Running it
 

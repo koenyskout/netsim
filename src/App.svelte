@@ -66,22 +66,20 @@
 
   const caption = $derived.by(() => {
     if (player.scene.event) return player.scene.event.caption;
-    if (player.result) return 'Press ▶ to watch the message travel, or step through it with the arrow keys.';
+    if (player.result) return 'Press ▶ (or →) to take the first step.';
     return 'Pick a message below to send it.';
   });
 
   function onkeydown(e: KeyboardEvent) {
     const t = e.target as HTMLElement;
     if (t.matches('input, select, textarea')) return;
-    if (e.key === 'ArrowRight') {
+    // Page Down / Page Up are what presenter clickers send.
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && !t.matches('button'))) {
       e.preventDefault();
       e.shiftKey ? player.nextHop() : player.next();
-    } else if (e.key === 'ArrowLeft') {
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
       e.preventDefault();
       e.shiftKey ? player.prevHop() : player.prev();
-    } else if (e.key === ' ' && !t.matches('button')) {
-      e.preventDefault();
-      player.toggle();
     } else if (e.key === 'Home') {
       player.restart();
     } else if (e.key === 'p' || e.key === 'P') {
